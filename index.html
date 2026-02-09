@@ -1,0 +1,1897 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Poker Preflop Trainer (In-Browser)</title>
+  <style>
+    :root{
+      --bg:#0b0f14;
+      --panel:#101824;
+      --panel2:#0f1621;
+      --text:#e6eef8;
+      --muted:#9fb2c7;
+      --line:#1d2a3b;
+      --accent:#6aa6ff;
+
+      /* GTO-ish colors */
+      --fold:#2e6ea6;     /* blue */
+      --call:#54b96b;     /* green */
+      --raise:#ff3b3b;    /* bright red */
+      --raise2:#c62828;   /* deeper red for additional raise sizes */
+      --jam:#4b0f14;      /* dark maroon */
+      --warn:#ffcc66;
+      --good:#5ce38a;
+      --bad:#ff5c6a;
+
+      --radius:14px;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:var(--sans);
+      background: radial-gradient(1200px 800px at 20% -10%, #172234 0%, var(--bg) 55%) fixed;
+      color:var(--text);
+      height:100vh;
+      overflow:hidden;
+    }
+    a{color:inherit}
+    button, input[type="range"], select{font-family:inherit}
+    .topbar{
+      height:56px;
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding:10px 14px;
+      border-bottom:1px solid var(--line);
+      background:rgba(9,13,19,.7);
+      backdrop-filter: blur(10px);
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:220px;
+    }
+    .dot{
+      width:12px;height:12px;border-radius:50%;
+      background:linear-gradient(145deg, #6aa6ff, #a06bff);
+      box-shadow: 0 0 0 5px rgba(106,166,255,.12);
+    }
+    .brand strong{letter-spacing:.3px}
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      border:1px solid var(--line);
+      background:rgba(16,24,36,.8);
+      padding:6px 10px;
+      border-radius:999px;
+      color:var(--muted);
+      font-size:13px;
+      white-space:nowrap;
+    }
+    .pill b{color:var(--text); font-weight:600}
+    .spacer{flex:1}
+    .seg{
+      display:inline-flex;
+      border:1px solid var(--line);
+      border-radius:999px;
+      overflow:hidden;
+      background:rgba(16,24,36,.8);
+    }
+    .seg button{
+      border:0;
+      background:transparent;
+      padding:8px 12px;
+      color:var(--muted);
+      cursor:pointer;
+      font-size:13px;
+    }
+    .seg button.active{
+      background:rgba(106,166,255,.18);
+      color:var(--text);
+    }
+    .btn{
+      border:1px solid var(--line);
+      background:rgba(16,24,36,.8);
+      color:var(--text);
+      padding:8px 12px;
+      border-radius:12px;
+      cursor:pointer;
+      transition:transform .05s ease, background .15s ease;
+    }
+    .btn:hover{background:rgba(22,34,51,.9)}
+    .btn:active{transform:translateY(1px)}
+    .btn.primary{
+      border-color:rgba(106,166,255,.35);
+      background:rgba(106,166,255,.18);
+    }
+    .btn.danger{
+      border-color:rgba(255,92,106,.35);
+      background:rgba(255,92,106,.12);
+    }
+    .btn.small{padding:6px 10px; border-radius:10px; font-size:13px}
+    .btn.icon{display:inline-flex; gap:8px; align-items:center}
+    .main{
+      height:calc(100vh - 56px);
+      display:flex;
+      overflow:hidden;
+    }
+    .left{
+      width:360px;
+      min-width:280px;
+      max-width:560px;
+      border-right:1px solid var(--line);
+      background:rgba(12,18,27,.68);
+      backdrop-filter: blur(10px);
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+    }
+    .divider{
+      width:6px;
+      cursor:col-resize;
+      background:transparent;
+    }
+    .right{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+      padding:14px;
+      gap:14px;
+    }
+    .panel{
+      border:1px solid var(--line);
+      background:rgba(16,24,36,.75);
+      border-radius:var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .panelHeader{
+      padding:12px 12px 10px;
+      border-bottom:1px solid var(--line);
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .panelHeader h3{
+      margin:0;
+      font-size:14px;
+      letter-spacing:.2px;
+    }
+    .panelBody{padding:12px}
+    .muted{color:var(--muted)}
+    .tiny{font-size:12px}
+    .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    .col{display:flex; flex-direction:column; gap:8px}
+    .hr{height:1px;background:var(--line);margin:10px 0}
+
+    /* Scenario list */
+    .list{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      max-height:260px;
+      overflow:auto;
+      padding-right:6px;
+    }
+    .item{
+      border:1px solid var(--line);
+      background:rgba(15,22,33,.75);
+      border-radius:12px;
+      padding:10px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .itemTop{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .itemTitle{
+      font-size:13px;
+      color:var(--text);
+      line-height:1.25;
+      word-break:break-word;
+    }
+    .itemMeta{
+      display:flex; gap:6px; flex-wrap:wrap;
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    /* Cards */
+    .cards{
+      display:flex; gap:10px; align-items:center;
+    }
+    .card{
+      width:56px; height:78px;
+      border-radius:12px;
+      background:linear-gradient(180deg, #ffffff 0%, #e8eef7 100%);
+      color:#111;
+      position:relative;
+      box-shadow: 0 10px 20px rgba(0,0,0,.35);
+      border:1px solid rgba(0,0,0,.15);
+      user-select:none;
+    }
+    .card .r{
+      position:absolute; top:8px; left:8px;
+      font-size:18px; font-weight:800;
+      font-family: var(--mono);
+    }
+    .card .s{
+      position:absolute; top:30px; left:9px;
+      font-size:18px;
+    }
+    .card .mid{
+      position:absolute; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      font-size:28px;
+      opacity:.9;
+    }
+    .redSuit{color:#c5162e}
+    .blackSuit{color:#111}
+
+    /* Poker action buttons */
+    .actionBar{
+      display:flex;
+      gap:10px;
+      align-items:stretch;
+      flex-wrap:wrap;
+    }
+    .actBtn{
+      border:1px solid var(--line);
+      background:rgba(15,22,33,.75);
+      color:var(--text);
+      padding:12px 14px;
+      border-radius:14px;
+      cursor:pointer;
+      min-width:120px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      transition:transform .05s ease, filter .15s ease;
+      user-select:none;
+    }
+    .actBtn:hover{filter:brightness(1.06)}
+    .actBtn:active{transform:translateY(1px)}
+    .k{
+      font-size:12px;
+      color:var(--muted);
+      border:1px solid var(--line);
+      padding:3px 8px;
+      border-radius:999px;
+      background:rgba(0,0,0,.22);
+      font-family:var(--mono);
+    }
+    .actFold{background:rgba(46,110,166,.20); border-color:rgba(46,110,166,.35)}
+    .actCall{background:rgba(84,185,107,.18); border-color:rgba(84,185,107,.35)}
+    .actRaise{background:rgba(255,59,59,.14); border-color:rgba(255,59,59,.35)}
+    .actJam{background:rgba(75,15,20,.40); border-color:rgba(170,40,55,.35)}
+    .raiseMenu{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:8px;
+    }
+    .chip{
+      border:1px solid var(--line);
+      background:rgba(10,14,20,.35);
+      padding:6px 10px;
+      border-radius:999px;
+      cursor:pointer;
+      font-size:13px;
+      color:var(--text);
+    }
+    .chip:hover{background:rgba(20,28,40,.5)}
+    .chip.active{
+      border-color:rgba(106,166,255,.45);
+      background:rgba(106,166,255,.15);
+    }
+
+    /* Grid */
+    .gridWrap{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      height:100%;
+      overflow:hidden;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(13, 1fr);
+      gap:2px;
+      background:rgba(0,0,0,.25);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:6px;
+      overflow:auto;
+      height:100%;
+    }
+    .cell{
+      position:relative;
+      border-radius:8px;
+      height:44px;
+      min-width:44px;
+      border:1px solid rgba(0,0,0,.15);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:13px;
+      font-weight:700;
+      color:#f4f7fb;
+      text-shadow:0 1px 1px rgba(0,0,0,.55);
+      user-select:none;
+      cursor:pointer;
+      overflow:hidden;
+    }
+    .cell .lbl{position:relative; z-index:2}
+    .cell.sel{
+      outline:2px solid rgba(106,166,255,.9);
+      outline-offset:-2px;
+    }
+    .cell .hint{
+      position:absolute;
+      right:6px; bottom:4px;
+      font-size:10px;
+      color:rgba(255,255,255,.75);
+      z-index:2;
+      opacity:.0;
+      transition:opacity .15s ease;
+    }
+    .cell:hover .hint{opacity:.85}
+    .legend{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      color:var(--muted);
+      font-size:12px;
+    }
+    .sw{width:10px;height:10px;border-radius:3px; display:inline-block; margin-right:6px; vertical-align:middle}
+    .toast{
+      position:fixed;
+      bottom:14px; left:14px;
+      background:rgba(16,24,36,.92);
+      border:1px solid var(--line);
+      padding:10px 12px;
+      border-radius:12px;
+      box-shadow: var(--shadow);
+      color:var(--text);
+      font-size:13px;
+      opacity:0;
+      transform: translateY(8px);
+      transition: opacity .2s ease, transform .2s ease;
+      pointer-events:none;
+      z-index:999;
+    }
+    .toast.show{
+      opacity:1;
+      transform: translateY(0);
+    }
+
+    .reportList{
+      max-height:240px;
+      overflow:auto;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      padding-right:6px;
+    }
+    .report{
+      border:1px solid var(--line);
+      background:rgba(15,22,33,.75);
+      border-radius:12px;
+      padding:10px;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      font-size:13px;
+    }
+    .report b{font-weight:700}
+    .tag{
+      display:inline-flex;
+      gap:6px;
+      align-items:center;
+      border:1px solid var(--line);
+      padding:4px 8px;
+      border-radius:999px;
+      background:rgba(0,0,0,.18);
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .badge{
+      padding:5px 10px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      font-size:12px;
+      color:var(--muted);
+      background:rgba(0,0,0,.18);
+    }
+    .badge.good{color:var(--good); border-color: rgba(92,227,138,.25); background:rgba(92,227,138,.08)}
+    .badge.bad{color:var(--bad); border-color: rgba(255,92,106,.25); background:rgba(255,92,106,.08)}
+    .badge.warn{color:var(--warn); border-color: rgba(255,204,102,.25); background:rgba(255,204,102,.08)}
+    .mono{font-family:var(--mono)}
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <div class="dot"></div>
+      <div>
+        <strong>Preflop Trainer</strong>
+        <div class="tiny muted">Cloudflare Pages · localStorage</div>
+      </div>
+    </div>
+
+    <div class="seg" id="modeSeg">
+      <button data-mode="trainer" class="active">Trainer</button>
+      <button data-mode="editor">Editor</button>
+      <button data-mode="library">Library</button>
+      <button data-mode="reports">Reports</button>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="pill"><span class="muted">Session</span> <b id="sessStat">—</b></div>
+    <button class="btn small" id="btnResetAll">Reset site data</button>
+  </div>
+
+  <div class="main">
+    <div class="left" id="leftPane">
+      <div class="panel" style="margin:14px; margin-bottom:10px;">
+        <div class="panelHeader">
+          <h3>Scenarios</h3>
+          <div class="spacer"></div>
+          <label class="btn small icon">
+            <span>Import JSON</span>
+            <input id="fileImport" type="file" accept=".json" multiple style="display:none" />
+          </label>
+        </div>
+        <div class="panelBody">
+          <div class="row" style="justify-content:space-between;">
+            <div class="pill"><span class="muted">Loaded</span> <b id="scenarioCount">0</b></div>
+            <div class="row">
+              <button class="btn small" id="btnExportSelected">Export selected</button>
+              <button class="btn small danger" id="btnDeleteSelected">Delete selected</button>
+            </div>
+          </div>
+          <div class="hr"></div>
+          <div class="list" id="scenarioList"></div>
+          <div class="hr"></div>
+          <div class="row">
+            <button class="btn small" id="btnSelectAll">Select all</button>
+            <button class="btn small" id="btnSelectNone">Select none</button>
+          </div>
+          <div class="tiny muted" style="margin-top:10px;">
+            Tip: scenario names are parsed to show stack/positions. JSON schema compatible with your trainer exports.
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin:0 14px 14px;">
+        <div class="panelHeader">
+          <h3 id="leftTitle">Trainer Controls</h3>
+          <div class="spacer"></div>
+          <span class="badge mono" id="hotkeyHint">Hotkeys: X,C,Z,1..9</span>
+        </div>
+        <div class="panelBody" id="leftBody">
+          <!-- dynamic -->
+        </div>
+      </div>
+    </div>
+
+    <div class="divider" id="dragDivider" title="Drag to resize"></div>
+
+    <div class="right">
+      <div class="panel">
+        <div class="panelHeader">
+          <h3 id="mainTitle">Trainer</h3>
+          <div class="spacer"></div>
+          <span class="tag" id="scenarioTag">No scenario selected</span>
+          <span class="tag" id="formatTag">Mode: MTT</span>
+        </div>
+        <div class="panelBody" id="mainBody" style="height: calc(100vh - 56px - 14px - 14px - 70px);">
+          <!-- dynamic -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  // -----------------------------
+  // Storage
+  // -----------------------------
+  const LS_SCEN = "pokerTrainerScenarios_v1";
+  const LS_REP  = "pokerTrainerReports_v1";
+  const LS_UI   = "pokerTrainerUI_v1";
+
+  const suits = [
+    {s:"♠", cls:"blackSuit"}, {s:"♥", cls:"redSuit"},
+    {s:"♦", cls:"redSuit"},   {s:"♣", cls:"blackSuit"},
+  ];
+
+  const RANKS = "AKQJT98765432";
+
+  function toast(msg){
+    const el = document.getElementById("toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    setTimeout(() => el.classList.remove("show"), 1800);
+  }
+
+  function loadJSON(key, fallback){
+    try{
+      const s = localStorage.getItem(key);
+      if(!s) return fallback;
+      return JSON.parse(s);
+    }catch{
+      return fallback;
+    }
+  }
+  function saveJSON(key, val){
+    localStorage.setItem(key, JSON.stringify(val));
+  }
+
+  function nowISO(){
+    return new Date().toISOString();
+  }
+
+  // -----------------------------
+  // Scenario schema normalization
+  // -----------------------------
+  function normalizeScenario(raw){
+    // Expect:
+    // { name, actions:[], tags:{}, grid:{ "AKs": {"Fold":..,"Jam":..} ... } }
+    if(!raw || typeof raw !== "object") throw new Error("Invalid JSON");
+    const name = String(raw.name ?? raw.scenarioName ?? raw.title ?? "Unnamed Scenario");
+    const tags = (raw.tags && typeof raw.tags==="object") ? raw.tags : {};
+    const grid = raw.grid && typeof raw.grid==="object" ? raw.grid : null;
+    if(!grid) throw new Error("Scenario missing grid");
+    // derive actions:
+    let actions = Array.isArray(raw.actions) ? raw.actions.map(String) : null;
+    if(!actions){
+      const anyHand = Object.keys(grid)[0];
+      if(!anyHand) throw new Error("Empty grid");
+      actions = Object.keys(grid[anyHand] || {}).map(String);
+    }
+    // always ensure Fold exists
+    if(!actions.includes("Fold")) actions.unshift("Fold");
+
+    // Ensure every hand has all actions; fill missing with 0
+    for(const hand of Object.keys(grid)){
+      const obj = grid[hand] || {};
+      for(const a of actions){
+        if(obj[a] == null) obj[a] = 0;
+      }
+      // Remove unknown keys not in actions:
+      for(const k of Object.keys(obj)){
+        if(!actions.includes(k)) delete obj[k];
+      }
+      grid[hand] = obj;
+    }
+
+    return {
+      id: raw.id || crypto.randomUUID(),
+      name,
+      actions,
+      tags,
+      grid,
+      created: raw.created || "import",
+      updatedAt: nowISO(),
+    };
+  }
+
+  function parseScenarioName(name){
+    // Very lightweight parser: look for "20bb - SB - X" etc
+    const parts = name.split(" - ").map(s => s.trim()).filter(Boolean);
+    let stack = null, pos = null, node = null;
+    if(parts.length){
+      const m = parts[0].match(/(\d+)\s*bb/i);
+      if(m) stack = m[1] + "bb";
+    }
+    if(parts.length >= 2){
+      // often the folder/spot name
+      pos = parts[1];
+    }
+    if(parts.length >= 3){
+      node = parts.slice(2).join(" - ");
+    }
+    return {stack, pos, node};
+  }
+
+  // -----------------------------
+  // UI State
+  // -----------------------------
+  const state = {
+    mode: "trainer",   // trainer | editor | library | reports
+    format: "MTT",     // MTT | Cash
+    scenarios: [],
+    selectedScenarioIds: new Set(),
+    activeScenarioId: null,
+
+    // Trainer
+    sessionLen: 20,
+    sessionActive: false,
+    sessionQueue: [],     // [{scenarioId, hand}]
+    currentIdx: 0,
+    currentHand: null,    // {scenario, hand, rng, solverChoice}
+    reveal: false,
+    attempts: [],         // [{scenarioId, hand, rng, solverChoice, userAction, scoreTier, pts}]
+
+    // Editor
+    editorScenarioId: null,
+    editorDraft: null,
+    editorDirty: false,
+    paintDown: false,
+    paintLastCell: null,
+    selectedCells: new Set(),
+    palette: { },         // action -> %
+  };
+
+  const uiSaved = loadJSON(LS_UI, null);
+  if(uiSaved && typeof uiSaved === "object"){
+    if(uiSaved.leftWidth) document.getElementById("leftPane").style.width = uiSaved.leftWidth + "px";
+    if(uiSaved.format) state.format = uiSaved.format;
+  }
+
+  // -----------------------------
+  // DOM refs
+  // -----------------------------
+  const modeSeg = document.getElementById("modeSeg");
+  const leftTitle = document.getElementById("leftTitle");
+  const leftBody  = document.getElementById("leftBody");
+  const mainTitle = document.getElementById("mainTitle");
+  const mainBody  = document.getElementById("mainBody");
+  const scenarioList = document.getElementById("scenarioList");
+  const scenarioCount = document.getElementById("scenarioCount");
+  const scenarioTag = document.getElementById("scenarioTag");
+  const formatTag = document.getElementById("formatTag");
+  const sessStat = document.getElementById("sessStat");
+
+  // -----------------------------
+  // Persistence: scenarios & reports
+  // -----------------------------
+  function loadScenarios(){
+    const arr = loadJSON(LS_SCEN, []);
+    state.scenarios = Array.isArray(arr) ? arr : [];
+    // ensure ids present
+    for(const s of state.scenarios){
+      if(!s.id) s.id = crypto.randomUUID();
+    }
+    // default select all
+    if(state.selectedScenarioIds.size === 0){
+      state.scenarios.forEach(s => state.selectedScenarioIds.add(s.id));
+    }
+  }
+  function saveScenarios(){
+    saveJSON(LS_SCEN, state.scenarios);
+  }
+  function loadReports(){
+    const arr = loadJSON(LS_REP, []);
+    return Array.isArray(arr) ? arr : [];
+  }
+  function addReport(report){
+    const arr = loadReports();
+    arr.unshift(report);
+    saveJSON(LS_REP, arr.slice(0, 200)); // cap
+  }
+
+  loadScenarios();
+
+  // -----------------------------
+  // Helpers
+  // -----------------------------
+  function getScenarioById(id){
+    return state.scenarios.find(s => s.id === id) || null;
+  }
+
+  function actionColor(action){
+    const a = action.toLowerCase();
+    if(a === "fold") return getCSS("--fold");
+    if(a === "call") return getCSS("--call");
+    if(a === "jam" || a === "allin" || a === "all-in") return getCSS("--jam");
+    if(a.startsWith("raise")){
+      // Raise 1: bright, Raise 2+: deeper
+      const m = a.match(/raise\s*(\d+)/);
+      if(m){
+        const n = parseInt(m[1], 10);
+        return n <= 1 ? getCSS("--raise") : getCSS("--raise2");
+      }
+      return getCSS("--raise");
+    }
+    return "#777";
+  }
+
+  function getCSS(varName){
+    return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+  }
+
+  function normalizePctMap(map, actions){
+    // ensure numeric, clamp >=0
+    let sum = 0;
+    const out = {};
+    for(const a of actions){
+      let v = Number(map[a] ?? 0);
+      if(!Number.isFinite(v)) v = 0;
+      v = Math.max(0, v);
+      out[a] = v;
+      sum += v;
+    }
+    if(sum <= 0){
+      out["Fold"] = 100;
+      for(const a of actions){
+        if(a !== "Fold") out[a] = 0;
+      }
+      return out;
+    }
+    // normalize to 100
+    for(const a of actions){
+      out[a] = (out[a] * 100) / sum;
+    }
+    // fix rounding drift: make sure sums to 100 by adjusting the max
+    let sum2 = 0;
+    let maxA = actions[0], maxV = -1;
+    for(const a of actions){
+      sum2 += out[a];
+      if(out[a] > maxV){ maxV = out[a]; maxA = a; }
+    }
+    const drift = 100 - sum2;
+    out[maxA] += drift;
+    return out;
+  }
+
+  function buildGradientForCell(pctMap, actions){
+    // GTO-ish: segments left->right by action shares.
+    // In trainer/editor, we want aggressive on left? GW often shows mixed bars;
+    // We'll just keep a stable order: actions array order.
+    const parts = [];
+    let start = 0;
+    for(const a of actions){
+      const v = Math.max(0, Number(pctMap[a] ?? 0));
+      if(v <= 0.001) continue;
+      const end = start + v;
+      const col = actionColor(a);
+      parts.push(`${col} ${start.toFixed(2)}% ${end.toFixed(2)}%`);
+      start = end;
+    }
+    if(parts.length === 0){
+      return `linear-gradient(to right, ${getCSS("--panel2")} 0% 100%)`;
+    }
+    // If <100, fill remainder with panel
+    if(start < 100){
+      parts.push(`${getCSS("--panel2")} ${start.toFixed(2)}% 100%`);
+    }
+    return `linear-gradient(to right, ${parts.join(", ")})`;
+  }
+
+  function randomHandLabel(){
+    // pick from 169 labels
+    const r = Math.floor(Math.random() * 13);
+    const c = Math.floor(Math.random() * 13);
+    const hi = RANKS[Math.min(r,c)];
+    const lo = RANKS[Math.max(r,c)];
+    if(r === c) return hi+lo;
+    return r < c ? `${hi}${lo}s` : `${hi}${lo}o`;
+  }
+
+  function handToTwoCards(hand){
+    // hand examples: "AKs","AJo","77"
+    const r1 = hand[0], r2 = hand[1];
+    let suited = hand.length === 3 && hand[2] === "s";
+    let offsuit = hand.length === 3 && hand[2] === "o";
+    let s1, s2;
+    if(r1 === r2){
+      // pair: two different suits
+      s1 = suits[Math.floor(Math.random()*4)];
+      do { s2 = suits[Math.floor(Math.random()*4)]; } while(s2.s === s1.s);
+    }else if(suited){
+      s1 = suits[Math.floor(Math.random()*4)];
+      s2 = s1;
+    }else{
+      // offsuit or unknown
+      s1 = suits[Math.floor(Math.random()*4)];
+      do { s2 = suits[Math.floor(Math.random()*4)]; } while(s2.s === s1.s);
+    }
+    return [
+      {rank:r1, suit:s1.s, cls:s1.cls},
+      {rank:r2, suit:s2.s, cls:s2.cls},
+    ];
+  }
+
+  function aggressionOrder(actions){
+    // Lower RNG => more aggressive, so order from most aggressive to least:
+    // Jam, Raise (highest number first), Raise, Call, Fold
+    const norm = [...actions];
+    const raises = norm.filter(a => a.toLowerCase().startsWith("raise"));
+    const jam = norm.filter(a => a.toLowerCase() === "jam");
+    const call = norm.filter(a => a.toLowerCase() === "call");
+    const fold = norm.filter(a => a.toLowerCase() === "fold");
+    // sort raises descending by index number (Raise 3 > Raise 2 > Raise 1 > Raise)
+    const raiseKey = (a) => {
+      const m = a.toLowerCase().match(/raise\s*(\d+)/);
+      if(m) return parseInt(m[1],10);
+      return 1;
+    };
+    raises.sort((a,b) => raiseKey(b) - raiseKey(a));
+    return [...jam, ...raises, ...call, ...fold];
+  }
+
+  function pickSolverAction(pctMap, actions){
+    // RNG 1-100, lower = more aggressive
+    const order = aggressionOrder(actions);
+    const norm = normalizePctMap(pctMap, actions);
+    const rng = Math.floor(Math.random()*100) + 1; // 1..100
+    let cum = 0;
+    let choice = order[order.length-1] || "Fold";
+    for(const a of order){
+      cum += Math.max(0, Number(norm[a] ?? 0));
+      if(rng <= cum){
+        choice = a;
+        break;
+      }
+    }
+    return {rng, choice, normalized: norm};
+  }
+
+  function scoreAttempt(userAction, solverChoice, pctMap, actions){
+    const norm = normalizePctMap(pctMap, actions);
+    const ua = userAction;
+    const sc = solverChoice;
+    const used = Number(norm[ua] ?? 0) > 0.0001;
+    if(ua === sc) return {tier:"best", pts:100};
+    if(used) return {tier:"correct", pts:70};
+    return {tier:"wrong", pts:0};
+  }
+
+  // -----------------------------
+  // Scenario library UI
+  // -----------------------------
+  function renderScenarioList(){
+    scenarioList.innerHTML = "";
+    scenarioCount.textContent = String(state.scenarios.length);
+
+    const sorted = [...state.scenarios].sort((a,b) => a.name.localeCompare(b.name));
+    for(const s of sorted){
+      const meta = parseScenarioName(s.name);
+      const actions = (s.actions || []).join(", ");
+      const checked = state.selectedScenarioIds.has(s.id);
+
+      const el = document.createElement("div");
+      el.className = "item";
+      el.innerHTML = `
+        <div class="itemTop">
+          <div style="display:flex; gap:10px; align-items:flex-start;">
+            <input type="checkbox" ${checked ? "checked":""} data-id="${s.id}" />
+            <div>
+              <div class="itemTitle">${escapeHTML(s.name)}</div>
+              <div class="itemMeta">
+                ${meta.stack ? `<span class="tag">Stack: ${escapeHTML(meta.stack)}</span>`:""}
+                ${meta.pos ? `<span class="tag">Spot: ${escapeHTML(meta.pos)}</span>`:""}
+                <span class="tag">Actions: ${escapeHTML(actions)}</span>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+            <button class="btn small" data-open="${s.id}">Open</button>
+            <button class="btn small" data-edit="${s.id}">Edit</button>
+          </div>
+        </div>
+      `;
+      scenarioList.appendChild(el);
+    }
+
+    scenarioList.querySelectorAll('input[type="checkbox"][data-id]').forEach(cb => {
+      cb.addEventListener("change", (e) => {
+        const id = e.target.getAttribute("data-id");
+        if(e.target.checked) state.selectedScenarioIds.add(id);
+        else state.selectedScenarioIds.delete(id);
+      });
+    });
+
+    scenarioList.querySelectorAll('button[data-open]').forEach(btn => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-open");
+        state.activeScenarioId = id;
+        state.mode = "trainer";
+        syncModeUI();
+        toast("Scenario selected for trainer");
+      });
+    });
+
+    scenarioList.querySelectorAll('button[data-edit]').forEach(btn => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-edit");
+        openEditor(id);
+      });
+    });
+  }
+
+  function escapeHTML(s){
+    return String(s).replace(/[&<>"']/g, (c) => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[c]));
+  }
+
+  // -----------------------------
+  // Mode UI
+  // -----------------------------
+  function syncModeUI(){
+    // top seg buttons
+    modeSeg.querySelectorAll("button").forEach(b => {
+      b.classList.toggle("active", b.getAttribute("data-mode") === state.mode);
+    });
+
+    formatTag.textContent = `Mode: ${state.format}`;
+    saveJSON(LS_UI, {
+      leftWidth: parseInt(document.getElementById("leftPane").style.width || "360", 10),
+      format: state.format
+    });
+
+    renderScenarioList();
+
+    if(state.mode === "trainer"){
+      renderTrainerLeft();
+      renderTrainerMain();
+    }else if(state.mode === "editor"){
+      renderEditorLeft();
+      renderEditorMain();
+    }else if(state.mode === "library"){
+      renderLibraryLeft();
+      renderLibraryMain();
+    }else if(state.mode === "reports"){
+      renderReportsLeft();
+      renderReportsMain();
+    }
+  }
+
+  modeSeg.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-mode]");
+    if(!btn) return;
+    state.mode = btn.getAttribute("data-mode");
+    syncModeUI();
+  });
+
+  document.getElementById("btnResetAll").addEventListener("click", () => {
+    if(!confirm("Reset all site data? This deletes imported scenarios and reports from this browser.")) return;
+    localStorage.removeItem(LS_SCEN);
+    localStorage.removeItem(LS_REP);
+    localStorage.removeItem(LS_UI);
+    state.scenarios = [];
+    state.selectedScenarioIds.clear();
+    state.activeScenarioId = null;
+    state.sessionActive = false;
+    saveScenarios();
+    syncModeUI();
+    toast("Reset complete");
+  });
+
+  // -----------------------------
+  // Import / export / delete
+  // -----------------------------
+  document.getElementById("fileImport").addEventListener("change", async (e) => {
+    const files = Array.from(e.target.files || []);
+    if(!files.length) return;
+
+    let added = 0;
+    for(const f of files){
+      try{
+        const text = await f.text();
+        const raw = JSON.parse(text);
+        const scen = normalizeScenario(raw);
+        // If same name exists, replace
+        const idx = state.scenarios.findIndex(s => s.name === scen.name);
+        if(idx >= 0){
+          scen.id = state.scenarios[idx].id;
+          state.scenarios[idx] = scen;
+        }else{
+          state.scenarios.push(scen);
+          state.selectedScenarioIds.add(scen.id);
+        }
+        added++;
+      }catch(err){
+        console.error(err);
+        toast(`Failed: ${f.name}`);
+      }
+    }
+    saveScenarios();
+    renderScenarioList();
+    toast(`Imported ${added} scenario(s)`);
+    e.target.value = "";
+  });
+
+  document.getElementById("btnDeleteSelected").addEventListener("click", () => {
+    const ids = [...state.selectedScenarioIds];
+    if(!ids.length) return toast("No scenarios selected");
+    if(!confirm(`Delete ${ids.length} selected scenario(s) from this browser?`)) return;
+    state.scenarios = state.scenarios.filter(s => !state.selectedScenarioIds.has(s.id));
+    state.selectedScenarioIds.clear();
+    // select all remaining
+    state.scenarios.forEach(s => state.selectedScenarioIds.add(s.id));
+    if(state.activeScenarioId && !getScenarioById(state.activeScenarioId)) state.activeScenarioId = null;
+    if(state.editorScenarioId && !getScenarioById(state.editorScenarioId)) closeEditor();
+    saveScenarios();
+    syncModeUI();
+    toast("Deleted");
+  });
+
+  document.getElementById("btnExportSelected").addEventListener("click", () => {
+    const ids = [...state.selectedScenarioIds];
+    if(!ids.length) return toast("No scenarios selected");
+    // export as one .json if single, else zip not supported here—so download one-by-one
+    const list = state.scenarios.filter(s => state.selectedScenarioIds.has(s.id));
+    if(list.length === 1){
+      downloadJSON(list[0], safeName(list[0].name) + ".json");
+    }else{
+      // multi: download sequentially
+      list.forEach((sc, i) => {
+        setTimeout(() => downloadJSON(sc, safeName(sc.name) + ".json"), i * 120);
+      });
+      toast(`Downloading ${list.length} files...`);
+    }
+  });
+
+  document.getElementById("btnSelectAll").addEventListener("click", () => {
+    state.selectedScenarioIds = new Set(state.scenarios.map(s => s.id));
+    renderScenarioList();
+  });
+  document.getElementById("btnSelectNone").addEventListener("click", () => {
+    state.selectedScenarioIds.clear();
+    renderScenarioList();
+  });
+
+  function safeName(s){
+    return String(s).replace(/[^A-Za-z0-9._-]+/g, "_").slice(0, 160);
+  }
+
+  function downloadJSON(obj, filename){
+    const blob = new Blob([JSON.stringify(obj, null, 2)], {type:"application/json"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    URL.revokeObjectURL(a.href);
+    a.remove();
+  }
+
+  // -----------------------------
+  // Trainer
+  // -----------------------------
+  function renderTrainerLeft(){
+    leftTitle.textContent = "Trainer Controls";
+    const scen = state.activeScenarioId ? getScenarioById(state.activeScenarioId) : null;
+
+    leftBody.innerHTML = `
+      <div class="row" style="justify-content:space-between;">
+        <div class="pill"><span class="muted">Format</span> <b>${state.format}</b></div>
+        <div class="seg">
+          <button id="fmtMTT" class="${state.format==="MTT"?"active":""}">MTT</button>
+          <button id="fmtCash" class="${state.format==="Cash"?"active":""}">Cash</button>
+        </div>
+      </div>
+      <div class="hr"></div>
+
+      <div class="row" style="justify-content:space-between;">
+        <div class="pill"><span class="muted">Selected</span> <b>${scen ? escapeHTML(scen.name) : "—"}</b></div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="row" style="justify-content:space-between;">
+        <div class="pill"><span class="muted">Session length</span> <b>${state.sessionLen}</b></div>
+        <input id="sessLen" type="range" min="5" max="60" step="1" value="${state.sessionLen}" />
+      </div>
+      <div class="tiny muted">Default is 20 hands. Uses selected scenarios (checked) as pool.</div>
+
+      <div class="hr"></div>
+
+      <div class="row">
+        <button class="btn primary" id="btnStart">${state.sessionActive ? "Restart session" : "Start session"}</button>
+        <button class="btn" id="btnStop" ${state.sessionActive ? "" : "disabled"}>Stop</button>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="tiny muted">
+        Trainer scoring: RNG 1–100 (lower = more aggressive). Best=100, Correct=70, Wrong=0.
+        You won’t see the answer until after you act.
+      </div>
+    `;
+
+    leftBody.querySelector("#fmtMTT").addEventListener("click", ()=>{state.format="MTT"; syncModeUI();});
+    leftBody.querySelector("#fmtCash").addEventListener("click", ()=>{state.format="Cash"; syncModeUI();});
+
+    leftBody.querySelector("#sessLen").addEventListener("input", (e)=>{
+      state.sessionLen = Number(e.target.value);
+      renderTrainerLeft();
+    });
+
+    leftBody.querySelector("#btnStart").addEventListener("click", startSession);
+    leftBody.querySelector("#btnStop").addEventListener("click", stopSession);
+  }
+
+  function renderTrainerMain(){
+    mainTitle.textContent = "Trainer";
+    const scen = state.activeScenarioId ? getScenarioById(state.activeScenarioId) : null;
+    scenarioTag.textContent = scen ? scen.name : "No scenario selected";
+
+    if(!state.sessionActive){
+      mainBody.innerHTML = `
+        <div class="row" style="gap:14px; align-items:flex-start;">
+          <div class="panel" style="flex:1; background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:14px;">
+            <h2 style="margin:0 0 8px; font-size:18px;">Ready to train</h2>
+            <div class="muted">Import scenarios on the left, select them, then start a session.</div>
+            <div class="hr"></div>
+            <div class="legend">
+              <span><span class="sw" style="background:var(--fold)"></span>Fold</span>
+              <span><span class="sw" style="background:var(--call)"></span>Call/Limp</span>
+              <span><span class="sw" style="background:var(--raise)"></span>Raise</span>
+              <span><span class="sw" style="background:var(--jam)"></span>Jam</span>
+            </div>
+            <div class="hr"></div>
+            <div class="tiny muted">Hotkeys: X=Fold, C=Call, Z=Jam, 1..9=Raise sizes (1=smallest).</div>
+          </div>
+        </div>
+      `;
+      sessStat.textContent = "—";
+      return;
+    }
+
+    const ch = state.currentHand;
+    if(!ch){
+      mainBody.innerHTML = `<div class="muted">Loading hand...</div>`;
+      return;
+    }
+
+    const {scenario, hand, rng, solverChoice, normalized} = ch;
+    const info = parseScenarioName(scenario.name);
+
+    const cards = handToTwoCards(hand);
+    const raiseActions = scenario.actions.filter(a => a.toLowerCase().startsWith("raise"));
+
+    mainBody.innerHTML = `
+      <div class="row" style="justify-content:space-between; align-items:flex-start;">
+        <div class="col" style="gap:10px;">
+          <div class="row">
+            <span class="tag">Stack: ${escapeHTML(info.stack || (scenario.tags?.stack_bb ? scenario.tags.stack_bb+"bb":"—"))}</span>
+            <span class="tag">Spot: ${escapeHTML(info.pos || "—")}</span>
+            <span class="tag">Hand #${state.currentIdx+1}/${state.sessionQueue.length}</span>
+            <span class="tag mono">RNG ${rng}</span>
+          </div>
+
+          <div class="cards">
+            ${renderCardHTML(cards[0])}
+            ${renderCardHTML(cards[1])}
+            <div class="pill"><span class="muted">Combo</span> <b class="mono">${hand}</b></div>
+          </div>
+
+          <div class="panel" style="background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:12px; max-width:760px;">
+            <div class="row" style="justify-content:space-between; align-items:center;">
+              <div>
+                <div style="font-weight:700;">Your decision</div>
+                <div class="tiny muted">Choose an action. You won’t see the strategy until after.</div>
+              </div>
+              <div class="pill"><span class="muted">Selected scenarios</span> <b>${state.selectedScenarioIds.size}</b></div>
+            </div>
+
+            <div class="hr"></div>
+
+            <div class="actionBar" id="actionBar">
+              <button class="actBtn actFold" data-act="Fold"><span>Fold</span><span class="k">X</span></button>
+              ${scenario.actions.some(a=>a.toLowerCase()==="call") ? `<button class="actBtn actCall" data-act="Call"><span>Call</span><span class="k">C</span></button>` : ``}
+              ${raiseActions.length ? `<button class="actBtn actRaise" id="btnRaiseMain"><span>Raise</span><span class="k">1..</span></button>` : ``}
+              ${scenario.actions.some(a=>a.toLowerCase()==="jam") ? `<button class="actBtn actJam" data-act="Jam"><span>All-in</span><span class="k">Z</span></button>` : ``}
+            </div>
+
+            ${raiseActions.length ? `
+              <div class="raiseMenu" id="raiseMenu" style="display:none;">
+                ${raiseActions.map((a,i)=>`<span class="chip" data-raise="${escapeHTML(a)}">${escapeHTML(a)} <span class="mono muted">(${i+1})</span></span>`).join("")}
+              </div>
+            ` : ``}
+
+            <div class="hr"></div>
+
+            <div id="revealBlock" style="display:${state.reveal ? "block":"none"};">
+              <div class="row" style="justify-content:space-between; align-items:center;">
+                <div>
+                  <div style="font-weight:700;">Solution</div>
+                  <div class="tiny muted">RNG selected: <span class="mono">${escapeHTML(solverChoice)}</span></div>
+                </div>
+                <div class="row">
+                  <span class="badge ${state.lastTierClass || ""}" id="lastScoreBadge">—</span>
+                  <button class="btn primary" id="btnNext">Next hand</button>
+                </div>
+              </div>
+              <div class="hr"></div>
+              <div class="row">
+                ${scenario.actions.map(a => {
+                  const v = Math.round((normalized[a]||0)*10)/10;
+                  return `<span class="tag"><span class="sw" style="background:${actionColor(a)}"></span>${escapeHTML(a)}: <b>${v}%</b></span>`;
+                }).join("")}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" style="width:520px; background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:12px; height:520px;">
+          <div class="row" style="justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-weight:700;">Range grid</div>
+              <div class="tiny muted">${state.reveal ? "Shown after action" : "Hidden until you act"}</div>
+            </div>
+            <div class="pill"><span class="muted">Scenario</span> <b class="mono">${escapeHTML(info.stack || "")}</b></div>
+          </div>
+          <div class="hr"></div>
+          <div style="height:440px;">
+            ${state.reveal ? renderGridHTML(scenario, hand, false) : `<div class="muted">Make your decision to reveal the grid.</div>`}
+          </div>
+        </div>
+      </div>
+    `;
+
+    // wire actions
+    const actionBar = document.getElementById("actionBar");
+    actionBar.querySelectorAll("[data-act]").forEach(btn => {
+      btn.addEventListener("click", () => handleUserAction(btn.getAttribute("data-act")));
+    });
+
+    if(raiseActions.length){
+      const btnRaiseMain = document.getElementById("btnRaiseMain");
+      const raiseMenu = document.getElementById("raiseMenu");
+      btnRaiseMain.addEventListener("click", () => {
+        raiseMenu.style.display = raiseMenu.style.display === "none" ? "flex" : "none";
+      });
+      raiseMenu.querySelectorAll("[data-raise]").forEach(chip => {
+        chip.addEventListener("click", () => handleUserAction(chip.getAttribute("data-raise")));
+      });
+    }
+
+    if(state.reveal){
+      document.getElementById("btnNext").addEventListener("click", nextHand);
+    }
+
+    // keyboard shortcuts
+    window.onkeydown = (ev) => {
+      if(!state.sessionActive) return;
+      if(state.reveal) return; // don’t allow new input after reveal
+      const k = ev.key.toLowerCase();
+      if(k === "x") return handleUserAction("Fold");
+      if(k === "c") {
+        if(ch.scenario.actions.some(a=>a.toLowerCase()==="call")) return handleUserAction("Call");
+      }
+      if(k === "z") {
+        if(ch.scenario.actions.some(a=>a.toLowerCase()==="jam")) return handleUserAction("Jam");
+      }
+      // 1..9 for raise sizes (1=smallest)
+      if(/^[1-9]$/.test(k)){
+        const n = parseInt(k,10);
+        const raises = ch.scenario.actions.filter(a=>a.toLowerCase().startsWith("raise"));
+        // map 1->smallest, 2->next smallest...
+        // Our list may be ["Raise","Raise 1","Raise 2"] etc; define smallest as lowest number/brightest.
+        const sorted = sortRaisesSmallToLarge(raises);
+        const pick = sorted[n-1];
+        if(pick) return handleUserAction(pick);
+        // if only one raise size AND Jam exists and user pressed 1: treat as Jam too
+        if(n===1 && raises.length===1 && ch.scenario.actions.some(a=>a.toLowerCase()==="jam")) return handleUserAction("Jam");
+      }
+    };
+  }
+
+  function sortRaisesSmallToLarge(raises){
+    const key = (a)=>{
+      const m = a.toLowerCase().match(/raise\s*(\d+)/);
+      if(m) return parseInt(m[1],10);
+      // "Raise" treat as 1 (small)
+      return 1;
+    };
+    return [...raises].sort((a,b)=>key(a)-key(b));
+  }
+
+  function renderCardHTML(c){
+    return `
+      <div class="card">
+        <div class="r ${c.cls}">${c.rank}</div>
+        <div class="s ${c.cls}">${c.suit}</div>
+        <div class="mid ${c.cls}">${c.suit}</div>
+      </div>
+    `;
+  }
+
+  function startSession(){
+    const pool = state.scenarios.filter(s => state.selectedScenarioIds.has(s.id));
+    if(pool.length === 0){
+      toast("Select at least one scenario");
+      return;
+    }
+    // Build queue: random scenario each hand, random combo each hand
+    state.sessionQueue = [];
+    for(let i=0;i<state.sessionLen;i++){
+      const scen = pool[Math.floor(Math.random()*pool.length)];
+      const hand = randomHandLabel();
+      state.sessionQueue.push({scenarioId: scen.id, hand});
+    }
+    state.sessionActive = true;
+    state.currentIdx = 0;
+    state.attempts = [];
+    state.reveal = false;
+    setCurrentHandFromQueue();
+    syncModeUI();
+    toast("Session started");
+  }
+
+  function stopSession(){
+    if(!state.sessionActive) return;
+    endSessionAndReport("Stopped");
+  }
+
+  function setCurrentHandFromQueue(){
+    const item = state.sessionQueue[state.currentIdx];
+    if(!item){
+      endSessionAndReport("Completed");
+      return;
+    }
+    const scenario = getScenarioById(item.scenarioId);
+    if(!scenario){
+      // skip
+      state.currentIdx++;
+      setCurrentHandFromQueue();
+      return;
+    }
+    const pctMap = scenario.grid[item.hand] || {};
+    const pick = pickSolverAction(pctMap, scenario.actions);
+    state.currentHand = {
+      scenario,
+      hand: item.hand,
+      rng: pick.rng,
+      solverChoice: pick.choice,
+      normalized: pick.normalized,
+    };
+    state.reveal = false;
+    state.lastTierClass = "";
+    updateSessStat();
+  }
+
+  function updateSessStat(){
+    if(!state.sessionActive){
+      sessStat.textContent = "—";
+      return;
+    }
+    const avg = state.attempts.length ? Math.round(state.attempts.reduce((a,x)=>a+x.pts,0)/state.attempts.length) : 0;
+    sessStat.textContent = `${state.currentIdx+1}/${state.sessionQueue.length} · Score ${avg}%`;
+  }
+
+  function handleUserAction(action){
+    const ch = state.currentHand;
+    if(!ch || state.reveal) return;
+
+    // Only accept actions that exist in scenario.actions
+    if(!ch.scenario.actions.includes(action)){
+      // allow "Raise" alias if scenario has Raise 1 etc
+      if(action === "Raise"){
+        const raises = ch.scenario.actions.filter(a=>a.toLowerCase().startsWith("raise"));
+        if(raises.length) action = sortRaisesSmallToLarge(raises)[0];
+      } else {
+        toast("Action not available in this scenario");
+        return;
+      }
+    }
+
+    const {tier, pts} = scoreAttempt(action, ch.solverChoice, ch.normalized, ch.scenario.actions);
+    state.attempts.push({
+      ts: nowISO(),
+      scenarioId: ch.scenario.id,
+      scenarioName: ch.scenario.name,
+      hand: ch.hand,
+      rng: ch.rng,
+      solverChoice: ch.solverChoice,
+      userAction: action,
+      tier,
+      pts,
+    });
+
+    state.reveal = true;
+    state.lastTierClass = tier === "best" ? "good" : (tier==="correct" ? "warn" : "bad");
+    renderTrainerMain();
+
+    const badge = document.getElementById("lastScoreBadge");
+    if(badge){
+      badge.className = `badge ${state.lastTierClass}`;
+      badge.textContent = tier === "best" ? `Best (100)` : (tier==="correct" ? `Correct (70)` : `Wrong (0)`);
+    }
+
+    updateSessStat();
+  }
+
+  function nextHand(){
+    state.currentIdx++;
+    if(state.currentIdx >= state.sessionQueue.length){
+      endSessionAndReport("Completed");
+      return;
+    }
+    setCurrentHandFromQueue();
+    renderTrainerMain();
+  }
+
+  function endSessionAndReport(status){
+    const attempts = state.attempts;
+    const avg = attempts.length ? (attempts.reduce((a,x)=>a+x.pts,0)/attempts.length) : 0;
+    const best = attempts.filter(a=>a.tier==="best").length;
+    const corr = attempts.filter(a=>a.tier==="correct").length;
+    const wrong = attempts.filter(a=>a.tier==="wrong").length;
+
+    addReport({
+      id: crypto.randomUUID(),
+      status,
+      createdAt: nowISO(),
+      format: state.format,
+      sessionLen: state.sessionQueue.length,
+      selectedScenarioCount: state.selectedScenarioIds.size,
+      avgScore: Math.round(avg),
+      breakdown: {best, correct:corr, wrong},
+      attempts: attempts.slice(0, 500),
+    });
+
+    state.sessionActive = false;
+    state.sessionQueue = [];
+    state.currentIdx = 0;
+    state.currentHand = null;
+    state.reveal = false;
+
+    syncModeUI();
+    toast(`Session ${status}. Avg ${Math.round(avg)}%`);
+  }
+
+  // -----------------------------
+  // Grid renderer
+  // -----------------------------
+  function renderGridHTML(scenario, highlightHand, selectable){
+    const actions = scenario.actions;
+    const cells = [];
+    for(let r=0;r<13;r++){
+      for(let c=0;c<13;c++){
+        const hand = labelFromRC(r,c);
+        const pctMap = scenario.grid[hand] || {};
+        const grad = buildGradientForCell(pctMap, actions);
+        const isHL = hand === highlightHand;
+        const isSel = state.selectedCells.has(hand);
+        const cls = `cell ${isSel ? "sel":""}`;
+        const hint = selectable ? `<div class="hint">paint</div>` : `<div class="hint">${isHL ? "you":""}</div>`;
+        cells.push(`
+          <div class="${cls}" data-hand="${hand}"
+               style="background-image:${grad}; ${isHL ? "outline:2px solid rgba(255,204,102,.9); outline-offset:-2px;" : ""}">
+            <div class="lbl mono">${hand}</div>
+            ${hint}
+          </div>
+        `);
+      }
+    }
+    return `
+      <div class="gridWrap">
+        <div class="legend">
+          ${actions.map(a => `<span><span class="sw" style="background:${actionColor(a)}"></span>${escapeHTML(a)}</span>`).join("")}
+        </div>
+        <div class="grid" id="grid">${cells.join("")}</div>
+      </div>
+    `;
+  }
+
+  function labelFromRC(r,c){
+    const hi = RANKS[Math.min(r,c)];
+    const lo = RANKS[Math.max(r,c)];
+    if(r===c) return hi+lo;
+    return r < c ? `${hi}${lo}s` : `${hi}${lo}o`;
+  }
+
+  // -----------------------------
+  // Editor
+  // -----------------------------
+  function openEditor(id){
+    state.mode = "editor";
+    state.editorScenarioId = id;
+    const scen = getScenarioById(id);
+    if(!scen){ toast("Scenario not found"); return; }
+    // draft copy
+    state.editorDraft = JSON.parse(JSON.stringify(scen));
+    state.editorDirty = false;
+    state.selectedCells.clear();
+
+    // init palette: equal-ish defaults, Fold 100 by default
+    state.palette = {};
+    for(const a of state.editorDraft.actions){
+      state.palette[a] = (a === "Fold") ? 100 : 0;
+    }
+
+    syncModeUI();
+    toast("Editor opened (no autosave)");
+  }
+
+  function closeEditor(){
+    state.editorScenarioId = null;
+    state.editorDraft = null;
+    state.editorDirty = false;
+    state.selectedCells.clear();
+  }
+
+  function renderEditorLeft(){
+    leftTitle.textContent = "Editor";
+    const scen = state.editorDraft;
+    if(!scen){
+      leftBody.innerHTML = `<div class="muted">Pick a scenario to edit from Library.</div>`;
+      return;
+    }
+
+    const actions = scen.actions;
+
+    leftBody.innerHTML = `
+      <div class="row" style="justify-content:space-between;">
+        <div class="pill"><span class="muted">Scenario</span> <b>${escapeHTML(scen.name)}</b></div>
+        <span class="badge ${state.editorDirty ? "warn":""}">${state.editorDirty ? "Unsaved changes" : "Saved"}</span>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="col">
+        <div style="font-weight:700;">Paint palette</div>
+        <div class="tiny muted">Drag over cells to paint these action frequencies. Sliders auto-normalize to 100.</div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="col" id="paletteArea"></div>
+
+      <div class="hr"></div>
+
+      <div class="row">
+        <button class="btn primary" id="btnSave">Save</button>
+        <button class="btn" id="btnDiscard">Discard</button>
+        <button class="btn" id="btnExportDraft">Export JSON</button>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="tiny muted">
+        Tip: click-drag paints. Shift-click adds single cell. Press Esc to clear selection.
+      </div>
+    `;
+
+    // palette UI
+    const pal = leftBody.querySelector("#paletteArea");
+    pal.innerHTML = actions.map(a => {
+      const v = Math.round((state.palette[a] ?? 0));
+      return `
+        <div class="row" style="justify-content:space-between; gap:10px;">
+          <span class="tag" style="min-width:120px;"><span class="sw" style="background:${actionColor(a)}"></span>${escapeHTML(a)}</span>
+          <input type="range" min="0" max="100" step="1" value="${v}" data-act="${escapeHTML(a)}" style="flex:1" />
+          <span class="pill mono" style="min-width:56px; justify-content:center;"><b>${v}%</b></span>
+          <button class="btn small" data-100="${escapeHTML(a)}">100%</button>
+        </div>
+      `;
+    }).join("");
+
+    pal.querySelectorAll('input[type="range"][data-act]').forEach(r => {
+      r.addEventListener("input", () => {
+        const a = r.getAttribute("data-act");
+        state.palette[a] = Number(r.value);
+        // normalize sliders so total is 100 but keep proportions
+        state.palette = normalizePctMap(state.palette, actions);
+        renderEditorLeft(); // cheap re-render
+        renderEditorMain(); // update grid preview
+      });
+    });
+    pal.querySelectorAll('button[data-100]').forEach(b => {
+      b.addEventListener("click", () => {
+        const a = b.getAttribute("data-100");
+        for(const x of actions) state.palette[x] = 0;
+        state.palette[a] = 100;
+        renderEditorLeft();
+        renderEditorMain();
+      });
+    });
+
+    leftBody.querySelector("#btnSave").addEventListener("click", () => {
+      if(!state.editorDraft) return;
+      // save draft into scenarios
+      const idx = state.scenarios.findIndex(s => s.id === state.editorDraft.id);
+      if(idx >= 0){
+        state.editorDraft.updatedAt = nowISO();
+        state.scenarios[idx] = state.editorDraft;
+        saveScenarios();
+        state.editorDirty = false;
+        toast("Saved");
+        renderScenarioList();
+        renderEditorLeft();
+      }
+    });
+
+    leftBody.querySelector("#btnDiscard").addEventListener("click", () => {
+      if(!confirm("Discard unsaved changes?")) return;
+      const original = getScenarioById(state.editorScenarioId);
+      if(!original) return;
+      state.editorDraft = JSON.parse(JSON.stringify(original));
+      state.editorDirty = false;
+      state.selectedCells.clear();
+      toast("Discarded");
+      renderEditorLeft();
+      renderEditorMain();
+    });
+
+    leftBody.querySelector("#btnExportDraft").addEventListener("click", () => {
+      if(!state.editorDraft) return;
+      downloadJSON(state.editorDraft, safeName(state.editorDraft.name) + ".json");
+    });
+  }
+
+  function renderEditorMain(){
+    mainTitle.textContent = "Editor";
+    const scen = state.editorDraft;
+    scenarioTag.textContent = scen ? scen.name : "No scenario selected";
+
+    if(!scen){
+      mainBody.innerHTML = `
+        <div class="muted">Go to Library and click Edit on a scenario.</div>
+      `;
+      return;
+    }
+
+    mainBody.innerHTML = `
+      <div class="row" style="justify-content:space-between; align-items:flex-start; gap:14px;">
+        <div class="panel" style="flex:1; background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:12px; height: calc(100vh - 56px - 14px - 14px - 120px);">
+          <div class="row" style="justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-weight:700;">Paint the grid</div>
+              <div class="tiny muted">Click-drag paints current palette onto cells. No autosave.</div>
+            </div>
+            <div class="row">
+              <span class="tag">Selected cells: <b>${state.selectedCells.size}</b></span>
+              <button class="btn small" id="btnClearSel">Clear selection</button>
+            </div>
+          </div>
+          <div class="hr"></div>
+          <div style="height: calc(100% - 64px);">
+            ${renderGridHTML(scen, null, true)}
+          </div>
+        </div>
+      </div>
+    `;
+
+    const grid = document.getElementById("grid");
+
+    const paintCell = (hand) => {
+      const s = state.editorDraft;
+      if(!s) return;
+      const actions = s.actions;
+      const pct = normalizePctMap(state.palette, actions);
+      s.grid[hand] = pct;
+      state.editorDirty = true;
+      // reflect selection set
+      state.selectedCells.add(hand);
+      // update cell style quickly
+      const el = grid.querySelector(`[data-hand="${hand}"]`);
+      if(el){
+        el.style.backgroundImage = buildGradientForCell(pct, actions);
+        el.classList.add("sel");
+      }
+    };
+
+    const clearSelection = () => {
+      state.selectedCells.clear();
+      grid.querySelectorAll(".cell.sel").forEach(c => c.classList.remove("sel"));
+      toast("Selection cleared");
+    };
+
+    document.getElementById("btnClearSel").addEventListener("click", clearSelection);
+
+    // Paint interactions
+    state.paintDown = false;
+    grid.addEventListener("mousedown", (e) => {
+      const cell = e.target.closest(".cell[data-hand]");
+      if(!cell) return;
+      state.paintDown = true;
+      const hand = cell.getAttribute("data-hand");
+      paintCell(hand);
+      e.preventDefault();
+    });
+    grid.addEventListener("mousemove", (e) => {
+      if(!state.paintDown) return;
+      const cell = e.target.closest(".cell[data-hand]");
+      if(!cell) return;
+      const hand = cell.getAttribute("data-hand");
+      paintCell(hand);
+    });
+    window.addEventListener("mouseup", () => state.paintDown = false, {once:true});
+
+    window.onkeydown = (ev) => {
+      if(state.mode !== "editor") return;
+      if(ev.key === "Escape") clearSelection();
+    };
+  }
+
+  // -----------------------------
+  // Library mode (scenario management)
+  // -----------------------------
+  function renderLibraryLeft(){
+    leftTitle.textContent = "Library";
+    leftBody.innerHTML = `
+      <div class="row" style="justify-content:space-between;">
+        <div class="pill"><span class="muted">Scenarios</span> <b>${state.scenarios.length}</b></div>
+        <button class="btn small" id="btnRefresh">Refresh</button>
+      </div>
+      <div class="hr"></div>
+      <div class="tiny muted">
+        Use the scenario list above. Click “Open” to train, “Edit” to paint changes.
+      </div>
+    `;
+    leftBody.querySelector("#btnRefresh").addEventListener("click", () => {
+      loadScenarios();
+      renderScenarioList();
+      toast("Refreshed");
+    });
+  }
+  function renderLibraryMain(){
+    mainTitle.textContent = "Library";
+    mainBody.innerHTML = `
+      <div class="panel" style="background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:14px;">
+        <h2 style="margin:0 0 8px; font-size:18px;">Scenario library</h2>
+        <div class="muted">Import JSON files on the left. Select scenarios to include in training sessions.</div>
+        <div class="hr"></div>
+        <div class="tiny muted">
+          Tip: keep multiple stacks/spots imported; trainer samples from your selected pool.
+        </div>
+      </div>
+    `;
+  }
+
+  // -----------------------------
+  // Reports
+  // -----------------------------
+  function renderReportsLeft(){
+    leftTitle.textContent = "Reports";
+    const reps = loadReports();
+    leftBody.innerHTML = `
+      <div class="row" style="justify-content:space-between;">
+        <div class="pill"><span class="muted">Saved sessions</span> <b>${reps.length}</b></div>
+        <button class="btn small danger" id="btnClearReports">Clear reports</button>
+      </div>
+      <div class="hr"></div>
+      <div class="reportList" id="reportList"></div>
+      <div class="hr"></div>
+      <div class="tiny muted">Click a report to inspect attempts.</div>
+    `;
+    const list = leftBody.querySelector("#reportList");
+    list.innerHTML = reps.slice(0, 40).map(r => {
+      const b = r.breakdown || {best:0,correct:0,wrong:0};
+      return `
+        <div class="report" data-rep="${escapeHTML(r.id)}">
+          <div class="row" style="justify-content:space-between;">
+            <b>${escapeHTML(r.status || "")}</b>
+            <span class="badge ${r.avgScore >= 80 ? "good" : (r.avgScore >= 60 ? "warn" : "bad")}">${r.avgScore}%</span>
+          </div>
+          <div class="tiny muted">${new Date(r.createdAt).toLocaleString()} · ${r.format} · ${r.sessionLen} hands</div>
+          <div class="tiny muted">Best ${b.best} · Correct ${b.correct} · Wrong ${b.wrong}</div>
+        </div>
+      `;
+    }).join("");
+
+    list.querySelectorAll(".report[data-rep]").forEach(el => {
+      el.addEventListener("click", () => {
+        const id = el.getAttribute("data-rep");
+        renderReportDetail(id);
+      });
+    });
+
+    leftBody.querySelector("#btnClearReports").addEventListener("click", () => {
+      if(!confirm("Delete all reports from this browser?")) return;
+      localStorage.removeItem(LS_REP);
+      toast("Reports cleared");
+      syncModeUI();
+    });
+  }
+
+  function renderReportsMain(){
+    mainTitle.textContent = "Reports";
+    mainBody.innerHTML = `
+      <div class="panel" style="background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:14px;">
+        <h2 style="margin:0 0 8px; font-size:18px;">Session reports</h2>
+        <div class="muted">Your sessions are stored locally in this browser. Click a report on the left to inspect hands.</div>
+      </div>
+    `;
+  }
+
+  function renderReportDetail(reportId){
+    const reps = loadReports();
+    const rep = reps.find(r => r.id === reportId);
+    if(!rep) return toast("Report not found");
+    mainTitle.textContent = "Report";
+    scenarioTag.textContent = "Report detail";
+
+    const attempts = rep.attempts || [];
+    const rows = attempts.map((a, i) => {
+      const cls = a.tier === "best" ? "good" : (a.tier==="correct" ? "warn":"bad");
+      return `
+        <tr>
+          <td class="mono">${i+1}</td>
+          <td>${escapeHTML(a.scenarioName || "")}</td>
+          <td class="mono">${escapeHTML(a.hand)}</td>
+          <td class="mono">${a.rng}</td>
+          <td class="mono">${escapeHTML(a.solverChoice)}</td>
+          <td class="mono">${escapeHTML(a.userAction)}</td>
+          <td><span class="badge ${cls}">${a.pts}</span></td>
+        </tr>
+      `;
+    }).join("");
+
+    mainBody.innerHTML = `
+      <div class="panel" style="background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:14px; overflow:auto; height: calc(100vh - 56px - 14px - 14px - 70px);">
+        <div class="row" style="justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-weight:800; font-size:16px;">${escapeHTML(rep.status)} · ${rep.avgScore}%</div>
+            <div class="tiny muted">${new Date(rep.createdAt).toLocaleString()} · ${rep.format} · ${rep.sessionLen} hands</div>
+          </div>
+          <button class="btn small" id="btnBackReports">Back</button>
+        </div>
+
+        <div class="hr"></div>
+
+        <table style="width:100%; border-collapse:collapse; font-size:13px;">
+          <thead>
+            <tr style="text-align:left; color:var(--muted); font-size:12px;">
+              <th style="padding:8px 6px; border-bottom:1px solid var(--line);">#</th>
+              <th style="padding:8px 6px; border-bottom:1px solid var(--line);">Scenario</th>
+              <th style="padding:8px 6px; border-bottom:1px solid var(--line);">Hand</th>
+              <th style="padding:8px 6px; border-bottom:1px solid var(--line);">RNG</th>
+              <th style="padding:8px 6px; border-bottom:1px solid var(--line);">Solver</th>
+              <th style="padding:8px 6px; border-bottom:1px solid var(--line);">You</th>
+              <th style="padding:8px 6px; border-bottom:1px solid var(--line);">Pts</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows || `<tr><td colspan="7" class="muted" style="padding:10px;">No attempts.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    document.getElementById("btnBackReports").addEventListener("click", () => {
+      syncModeUI();
+      renderReportsMain();
+    });
+  }
+
+  // -----------------------------
+  // Resizable left pane
+  // -----------------------------
+  const divider = document.getElementById("dragDivider");
+  let dragging = false;
+  divider.addEventListener("mousedown", () => dragging = true);
+  window.addEventListener("mouseup", () => dragging = false);
+  window.addEventListener("mousemove", (e) => {
+    if(!dragging) return;
+    const x = e.clientX;
+    const min = 280, max = 560;
+    const w = Math.min(max, Math.max(min, x));
+    document.getElementById("leftPane").style.width = w + "px";
+    saveJSON(LS_UI, {leftWidth:w, format: state.format});
+  });
+
+  // -----------------------------
+  // Initial render
+  // -----------------------------
+  syncModeUI();
+
+})();
+</script>
+</body>
+</html>
+
