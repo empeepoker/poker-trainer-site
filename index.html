@@ -239,6 +239,30 @@
     .redSuit{color:#c5162e}
     .blackSuit{color:#111}
 
+    /* RNG + Result prominence */
+    .rngBanner{
+      margin-top:6px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,204,102,.35);
+      background:rgba(255,204,102,.08);
+      text-align:center;
+      font-weight:900;
+      letter-spacing:.6px;
+      color:var(--warn);
+      font-size:22px;
+      font-family:var(--mono);
+      text-shadow:0 1px 1px rgba(0,0,0,.35);
+      user-select:none;
+    }
+    .resultBadge{
+      font-size:18px !important;
+      padding:10px 14px !important;
+      border-radius:999px !important;
+      font-weight:900 !important;
+      letter-spacing:.4px;
+    }
+
     /* Poker action buttons */
     .actionBar{
       display:flex;
@@ -290,6 +314,7 @@
       cursor:pointer;
       font-size:13px;
       color:var(--text);
+      user-select:none;
     }
     .chip:hover{background:rgba(20,28,40,.5)}
     .chip.active{
@@ -305,22 +330,27 @@
       height:100%;
       overflow:hidden;
     }
+
+    /* IMPORTANT: no internal scrollbars; cells auto-fit using --cell (set by JS) */
     .grid{
+      --cell: 44px;
       display:grid;
-      grid-template-columns: repeat(13, 1fr);
+      grid-template-columns: repeat(13, var(--cell));
+      grid-auto-rows: var(--cell);
       gap:2px;
       background:rgba(0,0,0,.25);
       border:1px solid var(--line);
       border-radius:14px;
       padding:6px;
-      overflow:auto;
+      overflow:hidden; /* was auto */
+      width:100%;
       height:100%;
+      justify-content:center;
+      align-content:center;
     }
     .cell{
       position:relative;
       border-radius:8px;
-      height:44px;
-      min-width:44px;
       border:1px solid rgba(0,0,0,.15);
       display:flex;
       align-items:center;
@@ -332,6 +362,10 @@
       user-select:none;
       cursor:pointer;
       overflow:hidden;
+      height: var(--cell);
+      width: var(--cell);
+      min-width:0;
+      min-height:0;
     }
     .cell .lbl{position:relative; z-index:2}
     .cell.sel{
@@ -481,7 +515,7 @@
         <div class="panelHeader">
           <h3 id="leftTitle">Trainer Controls</h3>
           <div class="spacer"></div>
-          <span class="badge mono" id="hotkeyHint">Hotkeys: X,C,Z,1..9</span>
+          <span class="badge mono" id="hotkeyHint">Hotkeys: X,C,Z,1..9, Enter</span>
         </div>
         <div class="panelBody" id="leftBody">
           <!-- dynamic -->
@@ -549,33 +583,68 @@
   }
 
   // -----------------------------
+  // Grid sizing: fit 13x13 without scrolling
+  // -----------------------------
+  function fitAllGrids(){
+    document.querySelectorAll(".grid").forEach(g => fitGrid(g));
+  }
+
+  function fitGrid(gridEl){
+    if(!gridEl) return;
+
+    // Needs a measurable box
+    const rect = gridEl.getBoundingClientRect();
+    if(rect.width < 50 || rect.height < 50) return;
+
+    const cs = getComputedStyle(gridEl);
+    const gap = parseFloat(cs.gap || cs.columnGap || "2") || 2;
+    const padL = parseFloat(cs.paddingLeft || "6") || 6;
+    const padR = parseFloat(cs.paddingRight || "6") || 6;
+    const padT = parseFloat(cs.paddingTop || "6") || 6;
+    const padB = parseFloat(cs.paddingBottom || "6") || 6;
+
+    const availW = rect.width - padL - padR - gap * 12;
+    const availH = rect.height - padT - padB - gap * 12;
+
+    const cellW = Math.floor(availW / 13);
+    const cellH = Math.floor(availH / 13);
+
+    let cell = Math.min(cellW, cellH);
+
+    // keep readable but avoid scroll; allow small on tiny screens
+    cell = Math.max(22, Math.min(48, cell));
+
+    gridEl.style.setProperty("--cell", cell + "px");
+  }
+
+  let resizeT = null;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeT);
+    resizeT = setTimeout(() => fitAllGrids(), 60);
+  });
+
+  // -----------------------------
   // Scenario schema normalization
   // -----------------------------
   function normalizeScenario(raw){
-    // Expect:
-    // { name, actions:[], tags:{}, grid:{ "AKs": {"Fold":..,"Jam":..} ... } }
     if(!raw || typeof raw !== "object") throw new Error("Invalid JSON");
     const name = String(raw.name ?? raw.scenarioName ?? raw.title ?? "Unnamed Scenario");
     const tags = (raw.tags && typeof raw.tags==="object") ? raw.tags : {};
     const grid = raw.grid && typeof raw.grid==="object" ? raw.grid : null;
     if(!grid) throw new Error("Scenario missing grid");
-    // derive actions:
     let actions = Array.isArray(raw.actions) ? raw.actions.map(String) : null;
     if(!actions){
       const anyHand = Object.keys(grid)[0];
       if(!anyHand) throw new Error("Empty grid");
       actions = Object.keys(grid[anyHand] || {}).map(String);
     }
-    // always ensure Fold exists
     if(!actions.includes("Fold")) actions.unshift("Fold");
 
-    // Ensure every hand has all actions; fill missing with 0
     for(const hand of Object.keys(grid)){
       const obj = grid[hand] || {};
       for(const a of actions){
         if(obj[a] == null) obj[a] = 0;
       }
-      // Remove unknown keys not in actions:
       for(const k of Object.keys(obj)){
         if(!actions.includes(k)) delete obj[k];
       }
@@ -594,20 +663,14 @@
   }
 
   function parseScenarioName(name){
-    // Very lightweight parser: look for "20bb - SB - X" etc
     const parts = name.split(" - ").map(s => s.trim()).filter(Boolean);
     let stack = null, pos = null, node = null;
     if(parts.length){
       const m = parts[0].match(/(\d+)\s*bb/i);
       if(m) stack = m[1] + "bb";
     }
-    if(parts.length >= 2){
-      // often the folder/spot name
-      pos = parts[1];
-    }
-    if(parts.length >= 3){
-      node = parts.slice(2).join(" - ");
-    }
+    if(parts.length >= 2) pos = parts[1];
+    if(parts.length >= 3) node = parts.slice(2).join(" - ");
     return {stack, pos, node};
   }
 
@@ -615,29 +678,26 @@
   // UI State
   // -----------------------------
   const state = {
-    mode: "trainer",   // trainer | editor | library | reports
-    format: "MTT",     // MTT | Cash
+    mode: "trainer",
+    format: "MTT",
     scenarios: [],
     selectedScenarioIds: new Set(),
     activeScenarioId: null,
 
-    // Trainer
     sessionLen: 20,
     sessionActive: false,
-    sessionQueue: [],     // [{scenarioId, hand}]
+    sessionQueue: [],
     currentIdx: 0,
-    currentHand: null,    // {scenario, hand, rng, solverChoice}
+    currentHand: null,
     reveal: false,
-    attempts: [],         // [{scenarioId, hand, rng, solverChoice, userAction, scoreTier, pts}]
+    attempts: [],
 
-    // Editor
     editorScenarioId: null,
     editorDraft: null,
     editorDirty: false,
     paintDown: false,
-    paintLastCell: null,
     selectedCells: new Set(),
-    palette: { },         // action -> %
+    palette: { },
   };
 
   const uiSaved = loadJSON(LS_UI, null);
@@ -666,11 +726,9 @@
   function loadScenarios(){
     const arr = loadJSON(LS_SCEN, []);
     state.scenarios = Array.isArray(arr) ? arr : [];
-    // ensure ids present
     for(const s of state.scenarios){
       if(!s.id) s.id = crypto.randomUUID();
     }
-    // default select all
     if(state.selectedScenarioIds.size === 0){
       state.scenarios.forEach(s => state.selectedScenarioIds.add(s.id));
     }
@@ -685,7 +743,7 @@
   function addReport(report){
     const arr = loadReports();
     arr.unshift(report);
-    saveJSON(LS_REP, arr.slice(0, 200)); // cap
+    saveJSON(LS_REP, arr.slice(0, 200));
   }
 
   loadScenarios();
@@ -697,13 +755,16 @@
     return state.scenarios.find(s => s.id === id) || null;
   }
 
+  function getCSS(varName){
+    return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+  }
+
   function actionColor(action){
     const a = action.toLowerCase();
     if(a === "fold") return getCSS("--fold");
     if(a === "call") return getCSS("--call");
     if(a === "jam" || a === "allin" || a === "all-in") return getCSS("--jam");
     if(a.startsWith("raise")){
-      // Raise 1: bright, Raise 2+: deeper
       const m = a.match(/raise\s*(\d+)/);
       if(m){
         const n = parseInt(m[1], 10);
@@ -714,12 +775,7 @@
     return "#777";
   }
 
-  function getCSS(varName){
-    return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
-  }
-
   function normalizePctMap(map, actions){
-    // ensure numeric, clamp >=0
     let sum = 0;
     const out = {};
     for(const a of actions){
@@ -736,11 +792,9 @@
       }
       return out;
     }
-    // normalize to 100
     for(const a of actions){
       out[a] = (out[a] * 100) / sum;
     }
-    // fix rounding drift: make sure sums to 100 by adjusting the max
     let sum2 = 0;
     let maxA = actions[0], maxV = -1;
     for(const a of actions){
@@ -753,9 +807,6 @@
   }
 
   function buildGradientForCell(pctMap, actions){
-    // GTO-ish: segments left->right by action shares.
-    // In trainer/editor, we want aggressive on left? GW often shows mixed bars;
-    // We'll just keep a stable order: actions array order.
     const parts = [];
     let start = 0;
     for(const a of actions){
@@ -769,7 +820,6 @@
     if(parts.length === 0){
       return `linear-gradient(to right, ${getCSS("--panel2")} 0% 100%)`;
     }
-    // If <100, fill remainder with panel
     if(start < 100){
       parts.push(`${getCSS("--panel2")} ${start.toFixed(2)}% 100%`);
     }
@@ -777,7 +827,6 @@
   }
 
   function randomHandLabel(){
-    // pick from 169 labels
     const r = Math.floor(Math.random() * 13);
     const c = Math.floor(Math.random() * 13);
     const hi = RANKS[Math.min(r,c)];
@@ -787,20 +836,16 @@
   }
 
   function handToTwoCards(hand){
-    // hand examples: "AKs","AJo","77"
     const r1 = hand[0], r2 = hand[1];
     let suited = hand.length === 3 && hand[2] === "s";
-    let offsuit = hand.length === 3 && hand[2] === "o";
     let s1, s2;
     if(r1 === r2){
-      // pair: two different suits
       s1 = suits[Math.floor(Math.random()*4)];
       do { s2 = suits[Math.floor(Math.random()*4)]; } while(s2.s === s1.s);
     }else if(suited){
       s1 = suits[Math.floor(Math.random()*4)];
       s2 = s1;
     }else{
-      // offsuit or unknown
       s1 = suits[Math.floor(Math.random()*4)];
       do { s2 = suits[Math.floor(Math.random()*4)]; } while(s2.s === s1.s);
     }
@@ -811,14 +856,12 @@
   }
 
   function aggressionOrder(actions){
-    // Lower RNG => more aggressive, so order from most aggressive to least:
-    // Jam, Raise (highest number first), Raise, Call, Fold
     const norm = [...actions];
     const raises = norm.filter(a => a.toLowerCase().startsWith("raise"));
     const jam = norm.filter(a => a.toLowerCase() === "jam");
     const call = norm.filter(a => a.toLowerCase() === "call");
     const fold = norm.filter(a => a.toLowerCase() === "fold");
-    // sort raises descending by index number (Raise 3 > Raise 2 > Raise 1 > Raise)
+
     const raiseKey = (a) => {
       const m = a.toLowerCase().match(/raise\s*(\d+)/);
       if(m) return parseInt(m[1],10);
@@ -829,10 +872,9 @@
   }
 
   function pickSolverAction(pctMap, actions){
-    // RNG 1-100, lower = more aggressive
     const order = aggressionOrder(actions);
     const norm = normalizePctMap(pctMap, actions);
-    const rng = Math.floor(Math.random()*100) + 1; // 1..100
+    const rng = Math.floor(Math.random()*100) + 1;
     let cum = 0;
     let choice = order[order.length-1] || "Fold";
     for(const a of order){
@@ -847,12 +889,16 @@
 
   function scoreAttempt(userAction, solverChoice, pctMap, actions){
     const norm = normalizePctMap(pctMap, actions);
-    const ua = userAction;
-    const sc = solverChoice;
-    const used = Number(norm[ua] ?? 0) > 0.0001;
-    if(ua === sc) return {tier:"best", pts:100};
+    const used = Number(norm[userAction] ?? 0) > 0.0001;
+    if(userAction === solverChoice) return {tier:"best", pts:100};
     if(used) return {tier:"correct", pts:70};
     return {tier:"wrong", pts:0};
+  }
+
+  function escapeHTML(s){
+    return String(s).replace(/[&<>"']/g, (c) => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[c]));
   }
 
   // -----------------------------
@@ -918,17 +964,10 @@
     });
   }
 
-  function escapeHTML(s){
-    return String(s).replace(/[&<>"']/g, (c) => ({
-      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-    }[c]));
-  }
-
   // -----------------------------
   // Mode UI
   // -----------------------------
   function syncModeUI(){
-    // top seg buttons
     modeSeg.querySelectorAll("button").forEach(b => {
       b.classList.toggle("active", b.getAttribute("data-mode") === state.mode);
     });
@@ -954,6 +993,9 @@
       renderReportsLeft();
       renderReportsMain();
     }
+
+    // after DOM settles
+    setTimeout(() => fitAllGrids(), 0);
   }
 
   modeSeg.addEventListener("click", (e) => {
@@ -990,7 +1032,6 @@
         const text = await f.text();
         const raw = JSON.parse(text);
         const scen = normalizeScenario(raw);
-        // If same name exists, replace
         const idx = state.scenarios.findIndex(s => s.name === scen.name);
         if(idx >= 0){
           scen.id = state.scenarios[idx].id;
@@ -1017,7 +1058,6 @@
     if(!confirm(`Delete ${ids.length} selected scenario(s) from this browser?`)) return;
     state.scenarios = state.scenarios.filter(s => !state.selectedScenarioIds.has(s.id));
     state.selectedScenarioIds.clear();
-    // select all remaining
     state.scenarios.forEach(s => state.selectedScenarioIds.add(s.id));
     if(state.activeScenarioId && !getScenarioById(state.activeScenarioId)) state.activeScenarioId = null;
     if(state.editorScenarioId && !getScenarioById(state.editorScenarioId)) closeEditor();
@@ -1029,12 +1069,10 @@
   document.getElementById("btnExportSelected").addEventListener("click", () => {
     const ids = [...state.selectedScenarioIds];
     if(!ids.length) return toast("No scenarios selected");
-    // export as one .json if single, else zip not supported here—so download one-by-one
     const list = state.scenarios.filter(s => state.selectedScenarioIds.has(s.id));
     if(list.length === 1){
       downloadJSON(list[0], safeName(list[0].name) + ".json");
     }else{
-      // multi: download sequentially
       list.forEach((sc, i) => {
         setTimeout(() => downloadJSON(sc, safeName(sc.name) + ".json"), i * 120);
       });
@@ -1064,6 +1102,29 @@
     a.click();
     URL.revokeObjectURL(a.href);
     a.remove();
+  }
+
+  // -----------------------------
+  // Raise hotkey mapping (numbers include Jam as largest)
+  // -----------------------------
+  function sortRaisesSmallToLarge(raises){
+    const key = (a)=>{
+      const m = a.toLowerCase().match(/raise\s*(\d+)/);
+      if(m) return parseInt(m[1],10);
+      return 1;
+    };
+    return [...raises].sort((a,b)=>key(a)-key(b));
+  }
+
+  function numberedAggroActions(scenario){
+    // 1..N are raise sizes (smallest->largest), and Jam is LAST (largest) if present.
+    const raises = sortRaisesSmallToLarge(scenario.actions.filter(a => a.toLowerCase().startsWith("raise")));
+    const out = [...raises];
+    if(scenario.actions.some(a => a.toLowerCase() === "jam")){
+      out.push("Jam");
+    }
+    // If there are no raises but Jam exists, Jam becomes "1".
+    return out;
   }
 
   // -----------------------------
@@ -1105,8 +1166,8 @@
       <div class="hr"></div>
 
       <div class="tiny muted">
-        Trainer scoring: RNG 1–100 (lower = more aggressive). Best=100, Correct=70, Wrong=0.
-        You won’t see the answer until after you act.
+        Scoring: RNG 1–100 (lower = more aggressive). Best=100, Correct=70, Wrong=0.
+        Enter = next hand (after reveal).
       </div>
     `;
 
@@ -1141,11 +1202,12 @@
               <span><span class="sw" style="background:var(--jam)"></span>Jam</span>
             </div>
             <div class="hr"></div>
-            <div class="tiny muted">Hotkeys: X=Fold, C=Call, Z=Jam, 1..9=Raise sizes (1=smallest).</div>
+            <div class="tiny muted">Hotkeys: X=Fold, C=Call, Z=Jam, 1..9=Raise sizes (Jam is the largest size), Enter=Next.</div>
           </div>
         </div>
       `;
       sessStat.textContent = "—";
+      window.onkeydown = null;
       return;
     }
 
@@ -1160,15 +1222,19 @@
 
     const cards = handToTwoCards(hand);
     const raiseActions = scenario.actions.filter(a => a.toLowerCase().startsWith("raise"));
+    const raisesSorted = sortRaisesSmallToLarge(raiseActions);
+    const numHotkeys = numberedAggroActions(scenario); // [Raise(s)..., Jam?]
+    const jamKey = (numHotkeys.length && numHotkeys[numHotkeys.length-1] === "Jam") ? String(numHotkeys.length) : null;
+
+    const gridPanelHeight = "calc(100vh - 56px - 14px - 14px - 140px)";
 
     mainBody.innerHTML = `
-      <div class="row" style="justify-content:space-between; align-items:flex-start;">
-        <div class="col" style="gap:10px;">
+      <div class="row" style="justify-content:space-between; align-items:stretch; gap:14px;">
+        <div class="col" style="gap:10px; flex:1; min-width:520px;">
           <div class="row">
             <span class="tag">Stack: ${escapeHTML(info.stack || (scenario.tags?.stack_bb ? scenario.tags.stack_bb+"bb":"—"))}</span>
             <span class="tag">Spot: ${escapeHTML(info.pos || "—")}</span>
             <span class="tag">Hand #${state.currentIdx+1}/${state.sessionQueue.length}</span>
-            <span class="tag mono">RNG ${rng}</span>
           </div>
 
           <div class="cards">
@@ -1177,10 +1243,12 @@
             <div class="pill"><span class="muted">Combo</span> <b class="mono">${hand}</b></div>
           </div>
 
-          <div class="panel" style="background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:12px; max-width:760px;">
+          <div class="rngBanner">RNG: ${rng}</div>
+
+          <div class="panel" style="background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:12px;">
             <div class="row" style="justify-content:space-between; align-items:center;">
               <div>
-                <div style="font-weight:700;">Your decision</div>
+                <div style="font-weight:800; font-size:15px;">Your decision</div>
                 <div class="tiny muted">Choose an action. You won’t see the strategy until after.</div>
               </div>
               <div class="pill"><span class="muted">Selected scenarios</span> <b>${state.selectedScenarioIds.size}</b></div>
@@ -1191,13 +1259,16 @@
             <div class="actionBar" id="actionBar">
               <button class="actBtn actFold" data-act="Fold"><span>Fold</span><span class="k">X</span></button>
               ${scenario.actions.some(a=>a.toLowerCase()==="call") ? `<button class="actBtn actCall" data-act="Call"><span>Call</span><span class="k">C</span></button>` : ``}
-              ${raiseActions.length ? `<button class="actBtn actRaise" id="btnRaiseMain"><span>Raise</span><span class="k">1..</span></button>` : ``}
-              ${scenario.actions.some(a=>a.toLowerCase()==="jam") ? `<button class="actBtn actJam" data-act="Jam"><span>All-in</span><span class="k">Z</span></button>` : ``}
+              ${raisesSorted.length ? `<button class="actBtn actRaise" id="btnRaiseMain"><span>Raise</span><span class="k">1..</span></button>` : ``}
+              ${scenario.actions.some(a=>a.toLowerCase()==="jam") ? `<button class="actBtn actJam" data-act="Jam"><span>All-in</span><span class="k">${jamKey ? jamKey+" / " : ""}Z</span></button>` : ``}
             </div>
 
-            ${raiseActions.length ? `
+            ${(raisesSorted.length || scenario.actions.some(a=>a.toLowerCase()==="jam")) ? `
               <div class="raiseMenu" id="raiseMenu" style="display:none;">
-                ${raiseActions.map((a,i)=>`<span class="chip" data-raise="${escapeHTML(a)}">${escapeHTML(a)} <span class="mono muted">(${i+1})</span></span>`).join("")}
+                ${numHotkeys.map((a,i)=>{
+                  const key = i+1;
+                  return `<span class="chip" data-raise="${escapeHTML(a)}">${escapeHTML(a)} <span class="mono muted">(${key})</span></span>`;
+                }).join("")}
               </div>
             ` : ``}
 
@@ -1206,12 +1277,12 @@
             <div id="revealBlock" style="display:${state.reveal ? "block":"none"};">
               <div class="row" style="justify-content:space-between; align-items:center;">
                 <div>
-                  <div style="font-weight:700;">Solution</div>
+                  <div style="font-weight:900; font-size:16px;">Solution</div>
                   <div class="tiny muted">RNG selected: <span class="mono">${escapeHTML(solverChoice)}</span></div>
                 </div>
                 <div class="row">
-                  <span class="badge ${state.lastTierClass || ""}" id="lastScoreBadge">—</span>
-                  <button class="btn primary" id="btnNext">Next hand</button>
+                  <span class="badge resultBadge ${state.lastTierClass || ""}" id="lastScoreBadge">—</span>
+                  <button class="btn primary" id="btnNext">Next hand <span class="mono">(Enter)</span></button>
                 </div>
               </div>
               <div class="hr"></div>
@@ -1225,37 +1296,40 @@
           </div>
         </div>
 
-        <div class="panel" style="width:520px; background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:12px; height:520px;">
+        <div class="panel" style="flex:0 0 680px; max-width:45vw; min-width:560px; background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:12px; height:${gridPanelHeight};">
           <div class="row" style="justify-content:space-between; align-items:center;">
             <div>
-              <div style="font-weight:700;">Range grid</div>
+              <div style="font-weight:800;">Range grid</div>
               <div class="tiny muted">${state.reveal ? "Shown after action" : "Hidden until you act"}</div>
             </div>
             <div class="pill"><span class="muted">Scenario</span> <b class="mono">${escapeHTML(info.stack || "")}</b></div>
           </div>
           <div class="hr"></div>
-          <div style="height:440px;">
+          <div style="height: calc(100% - 52px);">
             ${state.reveal ? renderGridHTML(scenario, hand, false) : `<div class="muted">Make your decision to reveal the grid.</div>`}
           </div>
         </div>
       </div>
     `;
 
-    // wire actions
     const actionBar = document.getElementById("actionBar");
     actionBar.querySelectorAll("[data-act]").forEach(btn => {
       btn.addEventListener("click", () => handleUserAction(btn.getAttribute("data-act")));
     });
 
-    if(raiseActions.length){
+    if(raisesSorted.length || scenario.actions.some(a=>a.toLowerCase()==="jam")){
       const btnRaiseMain = document.getElementById("btnRaiseMain");
       const raiseMenu = document.getElementById("raiseMenu");
-      btnRaiseMain.addEventListener("click", () => {
-        raiseMenu.style.display = raiseMenu.style.display === "none" ? "flex" : "none";
-      });
-      raiseMenu.querySelectorAll("[data-raise]").forEach(chip => {
-        chip.addEventListener("click", () => handleUserAction(chip.getAttribute("data-raise")));
-      });
+      if(btnRaiseMain && raiseMenu){
+        btnRaiseMain.addEventListener("click", () => {
+          raiseMenu.style.display = raiseMenu.style.display === "none" ? "flex" : "none";
+        });
+      }
+      if(raiseMenu){
+        raiseMenu.querySelectorAll("[data-raise]").forEach(chip => {
+          chip.addEventListener("click", () => handleUserAction(chip.getAttribute("data-raise")));
+        });
+      }
     }
 
     if(state.reveal){
@@ -1265,8 +1339,17 @@
     // keyboard shortcuts
     window.onkeydown = (ev) => {
       if(!state.sessionActive) return;
-      if(state.reveal) return; // don’t allow new input after reveal
       const k = ev.key.toLowerCase();
+
+      // Enter goes next ONLY after reveal
+      if(state.reveal && ev.key === "Enter"){
+        ev.preventDefault();
+        return nextHand();
+      }
+
+      // prevent answers before acting
+      if(state.reveal) return;
+
       if(k === "x") return handleUserAction("Fold");
       if(k === "c") {
         if(ch.scenario.actions.some(a=>a.toLowerCase()==="call")) return handleUserAction("Call");
@@ -1274,29 +1357,17 @@
       if(k === "z") {
         if(ch.scenario.actions.some(a=>a.toLowerCase()==="jam")) return handleUserAction("Jam");
       }
-      // 1..9 for raise sizes (1=smallest)
+
+      // Numbers: 1..9 mapped to raise sizes, with Jam as largest if present
       if(/^[1-9]$/.test(k)){
         const n = parseInt(k,10);
-        const raises = ch.scenario.actions.filter(a=>a.toLowerCase().startsWith("raise"));
-        // map 1->smallest, 2->next smallest...
-        // Our list may be ["Raise","Raise 1","Raise 2"] etc; define smallest as lowest number/brightest.
-        const sorted = sortRaisesSmallToLarge(raises);
-        const pick = sorted[n-1];
+        const options = numberedAggroActions(ch.scenario); // [raise..., jam?]
+        const pick = options[n-1];
         if(pick) return handleUserAction(pick);
-        // if only one raise size AND Jam exists and user pressed 1: treat as Jam too
-        if(n===1 && raises.length===1 && ch.scenario.actions.some(a=>a.toLowerCase()==="jam")) return handleUserAction("Jam");
       }
     };
-  }
 
-  function sortRaisesSmallToLarge(raises){
-    const key = (a)=>{
-      const m = a.toLowerCase().match(/raise\s*(\d+)/);
-      if(m) return parseInt(m[1],10);
-      // "Raise" treat as 1 (small)
-      return 1;
-    };
-    return [...raises].sort((a,b)=>key(a)-key(b));
+    setTimeout(() => fitAllGrids(), 0);
   }
 
   function renderCardHTML(c){
@@ -1315,7 +1386,6 @@
       toast("Select at least one scenario");
       return;
     }
-    // Build queue: random scenario each hand, random combo each hand
     state.sessionQueue = [];
     for(let i=0;i<state.sessionLen;i++){
       const scen = pool[Math.floor(Math.random()*pool.length)];
@@ -1344,7 +1414,6 @@
     }
     const scenario = getScenarioById(item.scenarioId);
     if(!scenario){
-      // skip
       state.currentIdx++;
       setCurrentHandFromQueue();
       return;
@@ -1376,12 +1445,17 @@
     const ch = state.currentHand;
     if(!ch || state.reveal) return;
 
-    // Only accept actions that exist in scenario.actions
+    // action might come from numbered menu containing "Jam"
+    if(action === "Jam" && !ch.scenario.actions.some(a=>a.toLowerCase()==="jam")){
+      toast("Jam not available in this scenario");
+      return;
+    }
+
     if(!ch.scenario.actions.includes(action)){
-      // allow "Raise" alias if scenario has Raise 1 etc
+      // allow "Raise" alias: pick smallest raise if exists
       if(action === "Raise"){
-        const raises = ch.scenario.actions.filter(a=>a.toLowerCase().startsWith("raise"));
-        if(raises.length) action = sortRaisesSmallToLarge(raises)[0];
+        const raises = sortRaisesSmallToLarge(ch.scenario.actions.filter(a=>a.toLowerCase().startsWith("raise")));
+        if(raises.length) action = raises[0];
       } else {
         toast("Action not available in this scenario");
         return;
@@ -1407,8 +1481,8 @@
 
     const badge = document.getElementById("lastScoreBadge");
     if(badge){
-      badge.className = `badge ${state.lastTierClass}`;
-      badge.textContent = tier === "best" ? `Best (100)` : (tier==="correct" ? `Correct (70)` : `Wrong (0)`);
+      badge.className = `badge resultBadge ${state.lastTierClass}`;
+      badge.textContent = tier === "best" ? `BEST · 100` : (tier==="correct" ? `CORRECT · 70` : `WRONG · 0`);
     }
 
     updateSessStat();
@@ -1502,12 +1576,10 @@
     state.editorScenarioId = id;
     const scen = getScenarioById(id);
     if(!scen){ toast("Scenario not found"); return; }
-    // draft copy
     state.editorDraft = JSON.parse(JSON.stringify(scen));
     state.editorDirty = false;
     state.selectedCells.clear();
 
-    // init palette: equal-ish defaults, Fold 100 by default
     state.palette = {};
     for(const a of state.editorDraft.actions){
       state.palette[a] = (a === "Fold") ? 100 : 0;
@@ -1562,11 +1634,10 @@
       <div class="hr"></div>
 
       <div class="tiny muted">
-        Tip: click-drag paints. Shift-click adds single cell. Press Esc to clear selection.
+        Tip: click-drag paints. Press Esc to clear selection.
       </div>
     `;
 
-    // palette UI
     const pal = leftBody.querySelector("#paletteArea");
     pal.innerHTML = actions.map(a => {
       const v = Math.round((state.palette[a] ?? 0));
@@ -1584,10 +1655,9 @@
       r.addEventListener("input", () => {
         const a = r.getAttribute("data-act");
         state.palette[a] = Number(r.value);
-        // normalize sliders so total is 100 but keep proportions
         state.palette = normalizePctMap(state.palette, actions);
-        renderEditorLeft(); // cheap re-render
-        renderEditorMain(); // update grid preview
+        renderEditorLeft();
+        renderEditorMain();
       });
     });
     pal.querySelectorAll('button[data-100]').forEach(b => {
@@ -1602,7 +1672,6 @@
 
     leftBody.querySelector("#btnSave").addEventListener("click", () => {
       if(!state.editorDraft) return;
-      // save draft into scenarios
       const idx = state.scenarios.findIndex(s => s.id === state.editorDraft.id);
       if(idx >= 0){
         state.editorDraft.updatedAt = nowISO();
@@ -1639,9 +1708,7 @@
     scenarioTag.textContent = scen ? scen.name : "No scenario selected";
 
     if(!scen){
-      mainBody.innerHTML = `
-        <div class="muted">Go to Library and click Edit on a scenario.</div>
-      `;
+      mainBody.innerHTML = `<div class="muted">Go to Library and click Edit on a scenario.</div>`;
       return;
     }
 
@@ -1659,7 +1726,7 @@
             </div>
           </div>
           <div class="hr"></div>
-          <div style="height: calc(100% - 64px);">
+          <div style="height: calc(100% - 52px);">
             ${renderGridHTML(scen, null, true)}
           </div>
         </div>
@@ -1675,9 +1742,7 @@
       const pct = normalizePctMap(state.palette, actions);
       s.grid[hand] = pct;
       state.editorDirty = true;
-      // reflect selection set
       state.selectedCells.add(hand);
-      // update cell style quickly
       const el = grid.querySelector(`[data-hand="${hand}"]`);
       if(el){
         el.style.backgroundImage = buildGradientForCell(pct, actions);
@@ -1693,33 +1758,32 @@
 
     document.getElementById("btnClearSel").addEventListener("click", clearSelection);
 
-    // Paint interactions
     state.paintDown = false;
     grid.addEventListener("mousedown", (e) => {
       const cell = e.target.closest(".cell[data-hand]");
       if(!cell) return;
       state.paintDown = true;
-      const hand = cell.getAttribute("data-hand");
-      paintCell(hand);
+      paintCell(cell.getAttribute("data-hand"));
       e.preventDefault();
     });
     grid.addEventListener("mousemove", (e) => {
       if(!state.paintDown) return;
       const cell = e.target.closest(".cell[data-hand]");
       if(!cell) return;
-      const hand = cell.getAttribute("data-hand");
-      paintCell(hand);
+      paintCell(cell.getAttribute("data-hand"));
     });
-    window.addEventListener("mouseup", () => state.paintDown = false, {once:true});
+    window.addEventListener("mouseup", () => state.paintDown = false);
 
     window.onkeydown = (ev) => {
       if(state.mode !== "editor") return;
       if(ev.key === "Escape") clearSelection();
     };
+
+    setTimeout(() => fitAllGrids(), 0);
   }
 
   // -----------------------------
-  // Library mode (scenario management)
+  // Library mode
   // -----------------------------
   function renderLibraryLeft(){
     leftTitle.textContent = "Library";
@@ -1745,12 +1809,9 @@
       <div class="panel" style="background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:14px;">
         <h2 style="margin:0 0 8px; font-size:18px;">Scenario library</h2>
         <div class="muted">Import JSON files on the left. Select scenarios to include in training sessions.</div>
-        <div class="hr"></div>
-        <div class="tiny muted">
-          Tip: keep multiple stacks/spots imported; trainer samples from your selected pool.
-        </div>
       </div>
     `;
+    window.onkeydown = null;
   }
 
   // -----------------------------
@@ -1807,6 +1868,7 @@
         <div class="muted">Your sessions are stored locally in this browser. Click a report on the left to inspect hands.</div>
       </div>
     `;
+    window.onkeydown = null;
   }
 
   function renderReportDetail(reportId){
@@ -1867,6 +1929,7 @@
       syncModeUI();
       renderReportsMain();
     });
+    window.onkeydown = null;
   }
 
   // -----------------------------
@@ -1883,10 +1946,28 @@
     const w = Math.min(max, Math.max(min, x));
     document.getElementById("leftPane").style.width = w + "px";
     saveJSON(LS_UI, {leftWidth:w, format: state.format});
+    setTimeout(() => fitAllGrids(), 0);
   });
 
   // -----------------------------
-  // Initial render
+  // Buttons & events
+  // -----------------------------
+  modeSeg.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-mode]");
+    if(!btn) return;
+    state.mode = btn.getAttribute("data-mode");
+    syncModeUI();
+  });
+
+  // Reports persistence helpers
+  function addReport(report){
+    const arr = loadReports();
+    arr.unshift(report);
+    saveJSON(LS_REP, arr.slice(0, 200));
+  }
+
+  // -----------------------------
+  // Init
   // -----------------------------
   syncModeUI();
 
@@ -1894,4 +1975,3 @@
 </script>
 </body>
 </html>
-
