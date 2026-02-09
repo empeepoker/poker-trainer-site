@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Poker Preflop Trainer (In-Browser)</title>
+  <title>Preflop Trainer (Browser)</title>
   <style>
     :root{
       --bg:#0b0f14;
@@ -18,7 +18,7 @@
       --fold:#2e6ea6;     /* blue */
       --call:#54b96b;     /* green */
       --raise:#ff3b3b;    /* bright red */
-      --raise2:#c62828;   /* deeper red for additional raise sizes */
+      --raise2:#c62828;   /* deeper red */
       --jam:#4b0f14;      /* dark maroon */
       --warn:#ffcc66;
       --good:#5ce38a;
@@ -38,8 +38,7 @@
       height:100vh;
       overflow:hidden;
     }
-    a{color:inherit}
-    button, input[type="range"], select{font-family:inherit}
+    button, input, select{font-family:inherit}
     .topbar{
       height:56px;
       display:flex;
@@ -62,19 +61,6 @@
       box-shadow: 0 0 0 5px rgba(106,166,255,.12);
     }
     .brand strong{letter-spacing:.3px}
-    .pill{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      border:1px solid var(--line);
-      background:rgba(16,24,36,.8);
-      padding:6px 10px;
-      border-radius:999px;
-      color:var(--muted);
-      font-size:13px;
-      white-space:nowrap;
-    }
-    .pill b{color:var(--text); font-weight:600}
     .spacer{flex:1}
     .seg{
       display:inline-flex;
@@ -95,6 +81,19 @@
       background:rgba(106,166,255,.18);
       color:var(--text);
     }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      border:1px solid var(--line);
+      background:rgba(16,24,36,.8);
+      padding:6px 10px;
+      border-radius:999px;
+      color:var(--muted);
+      font-size:13px;
+      white-space:nowrap;
+    }
+    .pill b{color:var(--text); font-weight:700}
     .btn{
       border:1px solid var(--line);
       background:rgba(16,24,36,.8);
@@ -116,6 +115,7 @@
     }
     .btn.small{padding:6px 10px; border-radius:10px; font-size:13px}
     .btn.icon{display:inline-flex; gap:8px; align-items:center}
+
     .main{
       height:calc(100vh - 56px);
       display:flex;
@@ -170,13 +170,38 @@
     .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
     .col{display:flex; flex-direction:column; gap:8px}
     .hr{height:1px;background:var(--line);margin:10px 0}
+    .mono{font-family:var(--mono)}
+
+    .badge{
+      padding:5px 10px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      font-size:12px;
+      color:var(--muted);
+      background:rgba(0,0,0,.18);
+    }
+    .badge.good{color:var(--good); border-color: rgba(92,227,138,.25); background:rgba(92,227,138,.08)}
+    .badge.bad{color:var(--bad); border-color: rgba(255,92,106,.25); background:rgba(255,92,106,.08)}
+    .badge.warn{color:var(--warn); border-color: rgba(255,204,102,.25); background:rgba(255,204,102,.08)}
+    .tag{
+      display:inline-flex;
+      gap:6px;
+      align-items:center;
+      border:1px solid var(--line);
+      padding:4px 8px;
+      border-radius:999px;
+      background:rgba(0,0,0,.18);
+      color:var(--muted);
+      font-size:12px;
+    }
+    .sw{width:10px;height:10px;border-radius:3px; display:inline-block; margin-right:6px; vertical-align:middle}
 
     /* Scenario list */
     .list{
       display:flex;
       flex-direction:column;
       gap:8px;
-      max-height:260px;
+      max-height:330px;
       overflow:auto;
       padding-right:6px;
     }
@@ -208,6 +233,15 @@
     }
 
     /* Cards */
+    .scenarioName{
+      font-size:16px;
+      font-weight:900;
+      letter-spacing:.2px;
+      margin-top:2px;
+      margin-bottom:4px;
+      color:var(--text);
+      text-shadow:0 1px 1px rgba(0,0,0,.4);
+    }
     .cards{
       display:flex; gap:10px; align-items:center;
     }
@@ -223,7 +257,7 @@
     }
     .card .r{
       position:absolute; top:8px; left:8px;
-      font-size:18px; font-weight:800;
+      font-size:18px; font-weight:900;
       font-family: var(--mono);
     }
     .card .s{
@@ -239,9 +273,8 @@
     .redSuit{color:#c5162e}
     .blackSuit{color:#111}
 
-    /* RNG + Result prominence */
     .rngBanner{
-      margin-top:6px;
+      margin-top:8px;
       padding:10px 12px;
       border-radius:14px;
       border:1px solid rgba(255,204,102,.35);
@@ -277,7 +310,7 @@
       padding:12px 14px;
       border-radius:14px;
       cursor:pointer;
-      min-width:120px;
+      min-width:130px;
       display:flex;
       align-items:center;
       justify-content:space-between;
@@ -300,27 +333,6 @@
     .actCall{background:rgba(84,185,107,.18); border-color:rgba(84,185,107,.35)}
     .actRaise{background:rgba(255,59,59,.14); border-color:rgba(255,59,59,.35)}
     .actJam{background:rgba(75,15,20,.40); border-color:rgba(170,40,55,.35)}
-    .raiseMenu{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-      margin-top:8px;
-    }
-    .chip{
-      border:1px solid var(--line);
-      background:rgba(10,14,20,.35);
-      padding:6px 10px;
-      border-radius:999px;
-      cursor:pointer;
-      font-size:13px;
-      color:var(--text);
-      user-select:none;
-    }
-    .chip:hover{background:rgba(20,28,40,.5)}
-    .chip.active{
-      border-color:rgba(106,166,255,.45);
-      background:rgba(106,166,255,.15);
-    }
 
     /* Grid */
     .gridWrap{
@@ -330,8 +342,6 @@
       height:100%;
       overflow:hidden;
     }
-
-    /* IMPORTANT: no internal scrollbars; cells auto-fit using --cell (set by JS) */
     .grid{
       --cell: 44px;
       display:grid;
@@ -342,7 +352,7 @@
       border:1px solid var(--line);
       border-radius:14px;
       padding:6px;
-      overflow:hidden; /* was auto */
+      overflow:hidden; /* no scrolling */
       width:100%;
       height:100%;
       justify-content:center;
@@ -356,7 +366,7 @@
       align-items:center;
       justify-content:center;
       font-size:13px;
-      font-weight:700;
+      font-weight:800;
       color:#f4f7fb;
       text-shadow:0 1px 1px rgba(0,0,0,.55);
       user-select:none;
@@ -389,7 +399,7 @@
       color:var(--muted);
       font-size:12px;
     }
-    .sw{width:10px;height:10px;border-radius:3px; display:inline-block; margin-right:6px; vertical-align:middle}
+
     .toast{
       position:fixed;
       bottom:14px; left:14px;
@@ -412,7 +422,7 @@
     }
 
     .reportList{
-      max-height:240px;
+      max-height:260px;
       overflow:auto;
       display:flex;
       flex-direction:column;
@@ -429,31 +439,20 @@
       gap:6px;
       font-size:13px;
     }
-    .report b{font-weight:700}
-    .tag{
-      display:inline-flex;
-      gap:6px;
-      align-items:center;
-      border:1px solid var(--line);
-      padding:4px 8px;
-      border-radius:999px;
-      background:rgba(0,0,0,.18);
-      color:var(--muted);
-      font-size:12px;
-    }
 
-    .badge{
-      padding:5px 10px;
-      border-radius:999px;
+    .textInput{
+      width:100%;
       border:1px solid var(--line);
-      font-size:12px;
-      color:var(--muted);
-      background:rgba(0,0,0,.18);
+      background:rgba(10,14,20,.35);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:12px;
+      outline:none;
     }
-    .badge.good{color:var(--good); border-color: rgba(92,227,138,.25); background:rgba(92,227,138,.08)}
-    .badge.bad{color:var(--bad); border-color: rgba(255,92,106,.25); background:rgba(255,92,106,.08)}
-    .badge.warn{color:var(--warn); border-color: rgba(255,204,102,.25); background:rgba(255,204,102,.08)}
-    .mono{font-family:var(--mono)}
+    .textInput:focus{
+      border-color:rgba(106,166,255,.45);
+      box-shadow: 0 0 0 4px rgba(106,166,255,.12);
+    }
   </style>
 </head>
 <body>
@@ -483,30 +482,31 @@
     <div class="left" id="leftPane">
       <div class="panel" style="margin:14px; margin-bottom:10px;">
         <div class="panelHeader">
-          <h3>Scenarios</h3>
+          <h3 id="scenarioPanelTitle">Scenarios</h3>
           <div class="spacer"></div>
-          <label class="btn small icon">
-            <span>Import JSON</span>
-            <input id="fileImport" type="file" accept=".json" multiple style="display:none" />
-          </label>
+          <div class="row" id="scenarioHeaderActions"></div>
+          <!-- hidden file input for Library tab only -->
+          <input id="fileImport" type="file" accept=".json" multiple style="display:none" />
         </div>
         <div class="panelBody">
           <div class="row" style="justify-content:space-between;">
             <div class="pill"><span class="muted">Loaded</span> <b id="scenarioCount">0</b></div>
-            <div class="row">
-              <button class="btn small" id="btnExportSelected">Export selected</button>
-              <button class="btn small danger" id="btnDeleteSelected">Delete selected</button>
-            </div>
+            <div class="pill"><span class="muted">Selected</span> <b id="scenarioSelectedCount">0</b></div>
           </div>
+
           <div class="hr"></div>
+
           <div class="list" id="scenarioList"></div>
+
           <div class="hr"></div>
+
           <div class="row">
             <button class="btn small" id="btnSelectAll">Select all</button>
             <button class="btn small" id="btnSelectNone">Select none</button>
           </div>
-          <div class="tiny muted" style="margin-top:10px;">
-            Tip: scenario names are parsed to show stack/positions. JSON schema compatible with your trainer exports.
+
+          <div class="tiny muted" style="margin-top:10px;" id="scenarioPanelHint">
+            In Trainer: select scenarios to include in sessions. Import is in Library.
           </div>
         </div>
       </div>
@@ -517,9 +517,7 @@
           <div class="spacer"></div>
           <span class="badge mono" id="hotkeyHint">Hotkeys: X,C,Z,1..9, Enter</span>
         </div>
-        <div class="panelBody" id="leftBody">
-          <!-- dynamic -->
-        </div>
+        <div class="panelBody" id="leftBody"></div>
       </div>
     </div>
 
@@ -530,12 +528,10 @@
         <div class="panelHeader">
           <h3 id="mainTitle">Trainer</h3>
           <div class="spacer"></div>
-          <span class="tag" id="scenarioTag">No scenario selected</span>
+          <span class="tag" id="scenarioTag">—</span>
           <span class="tag" id="formatTag">Mode: MTT</span>
         </div>
-        <div class="panelBody" id="mainBody" style="height: calc(100vh - 56px - 14px - 14px - 70px);">
-          <!-- dynamic -->
-        </div>
+        <div class="panelBody" id="mainBody" style="height: calc(100vh - 56px - 14px - 14px - 70px);"></div>
       </div>
     </div>
   </div>
@@ -545,56 +541,86 @@
 <script>
 (() => {
   // -----------------------------
-  // Storage
+  // Storage keys
   // -----------------------------
   const LS_SCEN = "pokerTrainerScenarios_v1";
   const LS_REP  = "pokerTrainerReports_v1";
   const LS_UI   = "pokerTrainerUI_v1";
 
+  const RANKS = "AKQJT98765432";
   const suits = [
     {s:"♠", cls:"blackSuit"}, {s:"♥", cls:"redSuit"},
     {s:"♦", cls:"redSuit"},   {s:"♣", cls:"blackSuit"},
   ];
 
-  const RANKS = "AKQJT98765432";
+  // -----------------------------
+  // DOM refs
+  // -----------------------------
+  const modeSeg = document.getElementById("modeSeg");
+  const leftTitle = document.getElementById("leftTitle");
+  const leftBody  = document.getElementById("leftBody");
+  const mainTitle = document.getElementById("mainTitle");
+  const mainBody  = document.getElementById("mainBody");
+  const scenarioList = document.getElementById("scenarioList");
+  const scenarioCount = document.getElementById("scenarioCount");
+  const scenarioSelectedCount = document.getElementById("scenarioSelectedCount");
+  const scenarioTag = document.getElementById("scenarioTag");
+  const formatTag = document.getElementById("formatTag");
+  const sessStat = document.getElementById("sessStat");
 
+  const scenarioHeaderActions = document.getElementById("scenarioHeaderActions");
+  const scenarioPanelTitle = document.getElementById("scenarioPanelTitle");
+  const scenarioPanelHint = document.getElementById("scenarioPanelHint");
+  const fileImport = document.getElementById("fileImport");
+
+  // -----------------------------
+  // Utils
+  // -----------------------------
   function toast(msg){
     const el = document.getElementById("toast");
     el.textContent = msg;
     el.classList.add("show");
     setTimeout(() => el.classList.remove("show"), 1800);
   }
-
+  function nowISO(){ return new Date().toISOString(); }
   function loadJSON(key, fallback){
     try{
       const s = localStorage.getItem(key);
       if(!s) return fallback;
       return JSON.parse(s);
-    }catch{
-      return fallback;
-    }
+    }catch{ return fallback; }
   }
-  function saveJSON(key, val){
-    localStorage.setItem(key, JSON.stringify(val));
+  function saveJSON(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
+  function escapeHTML(s){
+    return String(s).replace(/[&<>"']/g, (c) => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[c]));
   }
-
-  function nowISO(){
-    return new Date().toISOString();
+  function safeName(s){
+    return String(s).replace(/[^A-Za-z0-9._-]+/g, "_").slice(0, 160);
+  }
+  function downloadJSON(obj, filename){
+    const blob = new Blob([JSON.stringify(obj, null, 2)], {type:"application/json"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    URL.revokeObjectURL(a.href);
+    a.remove();
+  }
+  function getCSS(varName){
+    return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
   }
 
   // -----------------------------
-  // Grid sizing: fit 13x13 without scrolling
+  // Grid fit: no scrolling (Firefox-friendly)
   // -----------------------------
-  function fitAllGrids(){
-    document.querySelectorAll(".grid").forEach(g => fitGrid(g));
-  }
-
+  function fitAllGrids(){ document.querySelectorAll(".grid").forEach(g => fitGrid(g)); }
   function fitGrid(gridEl){
     if(!gridEl) return;
-
-    // Needs a measurable box
     const rect = gridEl.getBoundingClientRect();
-    if(rect.width < 50 || rect.height < 50) return;
+    if(rect.width < 60 || rect.height < 60) return;
 
     const cs = getComputedStyle(gridEl);
     const gap = parseFloat(cs.gap || cs.columnGap || "2") || 2;
@@ -610,14 +636,10 @@
     const cellH = Math.floor(availH / 13);
 
     let cell = Math.min(cellW, cellH);
-
-    // keep readable but avoid scroll; allow small on tiny screens
     cell = Math.max(22, Math.min(48, cell));
-
     gridEl.style.setProperty("--cell", cell + "px");
   }
-
-  let resizeT = null;
+  let resizeT=null;
   window.addEventListener("resize", () => {
     clearTimeout(resizeT);
     resizeT = setTimeout(() => fitAllGrids(), 60);
@@ -675,29 +697,31 @@
   }
 
   // -----------------------------
-  // UI State
+  // State
   // -----------------------------
   const state = {
     mode: "trainer",
     format: "MTT",
+
     scenarios: [],
     selectedScenarioIds: new Set(),
-    activeScenarioId: null,
 
+    // Trainer session
     sessionLen: 20,
     sessionActive: false,
     sessionQueue: [],
     currentIdx: 0,
-    currentHand: null,
+    currentHand: null,  // {scenario, hand, rng, solverChoice, normalized, cards}
     reveal: false,
     attempts: [],
 
+    // Editor
     editorScenarioId: null,
     editorDraft: null,
     editorDirty: false,
     paintDown: false,
     selectedCells: new Set(),
-    palette: { },
+    palette: {},
   };
 
   const uiSaved = loadJSON(LS_UI, null);
@@ -706,23 +730,6 @@
     if(uiSaved.format) state.format = uiSaved.format;
   }
 
-  // -----------------------------
-  // DOM refs
-  // -----------------------------
-  const modeSeg = document.getElementById("modeSeg");
-  const leftTitle = document.getElementById("leftTitle");
-  const leftBody  = document.getElementById("leftBody");
-  const mainTitle = document.getElementById("mainTitle");
-  const mainBody  = document.getElementById("mainBody");
-  const scenarioList = document.getElementById("scenarioList");
-  const scenarioCount = document.getElementById("scenarioCount");
-  const scenarioTag = document.getElementById("scenarioTag");
-  const formatTag = document.getElementById("formatTag");
-  const sessStat = document.getElementById("sessStat");
-
-  // -----------------------------
-  // Persistence: scenarios & reports
-  // -----------------------------
   function loadScenarios(){
     const arr = loadJSON(LS_SCEN, []);
     state.scenarios = Array.isArray(arr) ? arr : [];
@@ -733,9 +740,9 @@
       state.scenarios.forEach(s => state.selectedScenarioIds.add(s.id));
     }
   }
-  function saveScenarios(){
-    saveJSON(LS_SCEN, state.scenarios);
-  }
+  function saveScenarios(){ saveJSON(LS_SCEN, state.scenarios); }
+  function getScenarioById(id){ return state.scenarios.find(s => s.id === id) || null; }
+
   function loadReports(){
     const arr = loadJSON(LS_REP, []);
     return Array.isArray(arr) ? arr : [];
@@ -749,23 +756,15 @@
   loadScenarios();
 
   // -----------------------------
-  // Helpers
+  // Actions / colors / gradients
   // -----------------------------
-  function getScenarioById(id){
-    return state.scenarios.find(s => s.id === id) || null;
-  }
-
-  function getCSS(varName){
-    return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
-  }
-
   function actionColor(action){
     const a = action.toLowerCase();
     if(a === "fold") return getCSS("--fold");
     if(a === "call") return getCSS("--call");
     if(a === "jam" || a === "allin" || a === "all-in") return getCSS("--jam");
     if(a.startsWith("raise")){
-      const m = a.match(/raise\s*(\d+)/);
+      const m = a.match(/raise\s*(\d+)/i);
       if(m){
         const n = parseInt(m[1], 10);
         return n <= 1 ? getCSS("--raise") : getCSS("--raise2");
@@ -795,14 +794,12 @@
     for(const a of actions){
       out[a] = (out[a] * 100) / sum;
     }
-    let sum2 = 0;
-    let maxA = actions[0], maxV = -1;
+    let sum2 = 0, maxA = actions[0], maxV = -1;
     for(const a of actions){
       sum2 += out[a];
       if(out[a] > maxV){ maxV = out[a]; maxA = a; }
     }
-    const drift = 100 - sum2;
-    out[maxA] += drift;
+    out[maxA] += (100 - sum2);
     return out;
   }
 
@@ -826,18 +823,36 @@
     return `linear-gradient(to right, ${parts.join(", ")})`;
   }
 
-  function randomHandLabel(){
-    const r = Math.floor(Math.random() * 13);
-    const c = Math.floor(Math.random() * 13);
+  // -----------------------------
+  // 169 combo labels
+  // -----------------------------
+  function labelFromRC(r,c){
     const hi = RANKS[Math.min(r,c)];
     const lo = RANKS[Math.max(r,c)];
-    if(r === c) return hi+lo;
+    if(r===c) return hi+lo;
     return r < c ? `${hi}${lo}s` : `${hi}${lo}o`;
   }
+  function allComboLabels(){
+    const out=[];
+    for(let r=0;r<13;r++){
+      for(let c=0;c<13;c++){
+        out.push(labelFromRC(r,c));
+      }
+    }
+    return out;
+  }
+  const ALL_LABELS = allComboLabels();
 
+  function randomHandLabel(){
+    return ALL_LABELS[Math.floor(Math.random()*ALL_LABELS.length)];
+  }
+
+  // -----------------------------
+  // Card rendering (stable per hand)
+  // -----------------------------
   function handToTwoCards(hand){
     const r1 = hand[0], r2 = hand[1];
-    let suited = hand.length === 3 && hand[2] === "s";
+    const suited = hand.length === 3 && hand[2] === "s";
     let s1, s2;
     if(r1 === r2){
       s1 = suits[Math.floor(Math.random()*4)];
@@ -854,19 +869,51 @@
       {rank:r2, suit:s2.s, cls:s2.cls},
     ];
   }
+  function renderCardHTML(c){
+    return `
+      <div class="card">
+        <div class="r ${c.cls}">${c.rank}</div>
+        <div class="s ${c.cls}">${c.suit}</div>
+        <div class="mid ${c.cls}">${c.suit}</div>
+      </div>
+    `;
+  }
 
+  // -----------------------------
+  // Raise size sorting + hotkeys
+  // -----------------------------
+  function sortRaisesSmallToLarge(raises){
+    const key = (a)=>{
+      const m = a.toLowerCase().match(/raise\s*(\d+)/);
+      if(m) return parseInt(m[1],10);
+      // treat plain "Raise" as size 1
+      return 1;
+    };
+    return [...raises].sort((a,b)=>key(a)-key(b));
+  }
+  function numberedAggroActions(scenario){
+    // 1..N are raise sizes (smallest->largest), Jam is last if present.
+    const raises = sortRaisesSmallToLarge(scenario.actions.filter(a => a.toLowerCase().startsWith("raise")));
+    const out = [...raises];
+    if(scenario.actions.some(a => a.toLowerCase() === "jam")) out.push("Jam");
+    // if no raises but Jam exists => Jam becomes "1"
+    return out;
+  }
+
+  // -----------------------------
+  // RNG scoring
+  // -----------------------------
   function aggressionOrder(actions){
-    const norm = [...actions];
-    const raises = norm.filter(a => a.toLowerCase().startsWith("raise"));
-    const jam = norm.filter(a => a.toLowerCase() === "jam");
-    const call = norm.filter(a => a.toLowerCase() === "call");
-    const fold = norm.filter(a => a.toLowerCase() === "fold");
-
+    const raises = actions.filter(a => a.toLowerCase().startsWith("raise"));
+    const jam = actions.filter(a => a.toLowerCase() === "jam");
+    const call = actions.filter(a => a.toLowerCase() === "call");
+    const fold = actions.filter(a => a.toLowerCase() === "fold");
     const raiseKey = (a) => {
       const m = a.toLowerCase().match(/raise\s*(\d+)/);
       if(m) return parseInt(m[1],10);
       return 1;
     };
+    // more aggressive first: Jam, largest raise ... smallest raise, Call, Fold
     raises.sort((a,b) => raiseKey(b) - raiseKey(a));
     return [...jam, ...raises, ...call, ...fold];
   }
@@ -895,18 +942,54 @@
     return {tier:"wrong", pts:0};
   }
 
-  function escapeHTML(s){
-    return String(s).replace(/[&<>"']/g, (c) => ({
-      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-    }[c]));
+  // -----------------------------
+  // Scenario panel header actions (per tab)
+  // -----------------------------
+  function renderScenarioHeaderActions(){
+    scenarioHeaderActions.innerHTML = "";
+
+    const mkBtn = (label, cls, onClick) => {
+      const b = document.createElement("button");
+      b.className = `btn small ${cls||""}`.trim();
+      b.textContent = label;
+      b.addEventListener("click", onClick);
+      return b;
+    };
+
+    if(state.mode === "library"){
+      // Import only here (per your request)
+      const importBtn = document.createElement("button");
+      importBtn.className = "btn small";
+      importBtn.textContent = "Import JSON";
+      importBtn.addEventListener("click", ()=> fileImport.click());
+      scenarioHeaderActions.appendChild(importBtn);
+
+      scenarioHeaderActions.appendChild(mkBtn("New Scenario", "primary", () => createNewScenario(true)));
+      scenarioHeaderActions.appendChild(mkBtn("Export selected", "", exportSelectedScenarios));
+      scenarioHeaderActions.appendChild(mkBtn("Delete selected", "danger", deleteSelectedScenarios));
+      scenarioPanelHint.textContent = "Library: import, create, export, delete scenarios.";
+
+    } else if(state.mode === "trainer"){
+      // No import here
+      scenarioHeaderActions.appendChild(mkBtn("New Scenario", "primary", () => createNewScenario(true)));
+      scenarioPanelHint.textContent = "Trainer: select scenarios to include in sessions. Import is in Library.";
+
+    } else if(state.mode === "editor"){
+      scenarioHeaderActions.appendChild(mkBtn("New Scenario", "primary", () => createNewScenario(true)));
+      scenarioPanelHint.textContent = "Editor: paint ranges. Save to persist changes.";
+
+    } else if(state.mode === "reports"){
+      scenarioPanelHint.textContent = "Reports: your sessions are stored locally in this browser.";
+    }
   }
 
   // -----------------------------
-  // Scenario library UI
+  // Scenario list
   // -----------------------------
   function renderScenarioList(){
     scenarioList.innerHTML = "";
     scenarioCount.textContent = String(state.scenarios.length);
+    scenarioSelectedCount.textContent = String(state.selectedScenarioIds.size);
 
     const sorted = [...state.scenarios].sort((a,b) => a.name.localeCompare(b.name));
     for(const s of sorted){
@@ -930,7 +1013,6 @@
             </div>
           </div>
           <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
-            <button class="btn small" data-open="${s.id}">Open</button>
             <button class="btn small" data-edit="${s.id}">Edit</button>
           </div>
         </div>
@@ -943,86 +1025,71 @@
         const id = e.target.getAttribute("data-id");
         if(e.target.checked) state.selectedScenarioIds.add(id);
         else state.selectedScenarioIds.delete(id);
-      });
-    });
-
-    scenarioList.querySelectorAll('button[data-open]').forEach(btn => {
-      btn.addEventListener("click", () => {
-        const id = btn.getAttribute("data-open");
-        state.activeScenarioId = id;
-        state.mode = "trainer";
-        syncModeUI();
-        toast("Scenario selected for trainer");
+        scenarioSelectedCount.textContent = String(state.selectedScenarioIds.size);
       });
     });
 
     scenarioList.querySelectorAll('button[data-edit]').forEach(btn => {
-      btn.addEventListener("click", () => {
-        const id = btn.getAttribute("data-edit");
-        openEditor(id);
-      });
+      btn.addEventListener("click", () => openEditor(btn.getAttribute("data-edit")));
     });
   }
 
   // -----------------------------
-  // Mode UI
+  // Create new scenario (wizard)
   // -----------------------------
-  function syncModeUI(){
-    modeSeg.querySelectorAll("button").forEach(b => {
-      b.classList.toggle("active", b.getAttribute("data-mode") === state.mode);
-    });
-
-    formatTag.textContent = `Mode: ${state.format}`;
-    saveJSON(LS_UI, {
-      leftWidth: parseInt(document.getElementById("leftPane").style.width || "360", 10),
-      format: state.format
-    });
-
-    renderScenarioList();
-
-    if(state.mode === "trainer"){
-      renderTrainerLeft();
-      renderTrainerMain();
-    }else if(state.mode === "editor"){
-      renderEditorLeft();
-      renderEditorMain();
-    }else if(state.mode === "library"){
-      renderLibraryLeft();
-      renderLibraryMain();
-    }else if(state.mode === "reports"){
-      renderReportsLeft();
-      renderReportsMain();
+  function emptyGridForActions(actions){
+    const grid = {};
+    for(const hand of ALL_LABELS){
+      const obj = {};
+      for(const a of actions) obj[a] = 0;
+      obj["Fold"] = 100;
+      grid[hand] = obj;
     }
-
-    // after DOM settles
-    setTimeout(() => fitAllGrids(), 0);
+    return grid;
   }
 
-  modeSeg.addEventListener("click", (e) => {
-    const btn = e.target.closest("button[data-mode]");
-    if(!btn) return;
-    state.mode = btn.getAttribute("data-mode");
-    syncModeUI();
-  });
+  function createNewScenario(openEditorAfter=true){
+    const name = (prompt("Scenario name (example: 20bb - BTN - RFI)") || "").trim();
+    if(!name) return;
 
-  document.getElementById("btnResetAll").addEventListener("click", () => {
-    if(!confirm("Reset all site data? This deletes imported scenarios and reports from this browser.")) return;
-    localStorage.removeItem(LS_SCEN);
-    localStorage.removeItem(LS_REP);
-    localStorage.removeItem(LS_UI);
-    state.scenarios = [];
-    state.selectedScenarioIds.clear();
-    state.activeScenarioId = null;
-    state.sessionActive = false;
+    const includeCall = (prompt("Include Call/Limp action? (y/n)", "n") || "n").trim().toLowerCase().startsWith("y");
+    const raiseCountRaw = (prompt("How many non-jam raise sizes? (0-6)", "1") || "1").trim();
+    let raiseCount = parseInt(raiseCountRaw, 10);
+    if(!Number.isFinite(raiseCount) || raiseCount < 0) raiseCount = 0;
+    if(raiseCount > 6) raiseCount = 6;
+
+    const includeJam = (prompt("Include Jam (all-in) action? (y/n)", "y") || "y").trim().toLowerCase().startsWith("y");
+
+    const actions = ["Fold"];
+    if(includeCall) actions.push("Call");
+    for(let i=1;i<=raiseCount;i++){
+      actions.push(`Raise ${i}`);
+    }
+    if(includeJam) actions.push("Jam");
+
+    const scen = {
+      id: crypto.randomUUID(),
+      name,
+      actions,
+      tags: {},
+      grid: emptyGridForActions(actions),
+      created: "local",
+      updatedAt: nowISO(),
+    };
+
+    state.scenarios.push(scen);
+    state.selectedScenarioIds.add(scen.id);
     saveScenarios();
-    syncModeUI();
-    toast("Reset complete");
-  });
+    renderScenarioList();
+    toast("Created scenario");
+
+    if(openEditorAfter) openEditor(scen.id);
+  }
 
   // -----------------------------
-  // Import / export / delete
+  // Import / export / delete (Library only)
   // -----------------------------
-  document.getElementById("fileImport").addEventListener("change", async (e) => {
+  fileImport.addEventListener("change", async (e) => {
     const files = Array.from(e.target.files || []);
     if(!files.length) return;
 
@@ -1048,25 +1115,12 @@
     }
     saveScenarios();
     renderScenarioList();
+    scenarioSelectedCount.textContent = String(state.selectedScenarioIds.size);
     toast(`Imported ${added} scenario(s)`);
     e.target.value = "";
   });
 
-  document.getElementById("btnDeleteSelected").addEventListener("click", () => {
-    const ids = [...state.selectedScenarioIds];
-    if(!ids.length) return toast("No scenarios selected");
-    if(!confirm(`Delete ${ids.length} selected scenario(s) from this browser?`)) return;
-    state.scenarios = state.scenarios.filter(s => !state.selectedScenarioIds.has(s.id));
-    state.selectedScenarioIds.clear();
-    state.scenarios.forEach(s => state.selectedScenarioIds.add(s.id));
-    if(state.activeScenarioId && !getScenarioById(state.activeScenarioId)) state.activeScenarioId = null;
-    if(state.editorScenarioId && !getScenarioById(state.editorScenarioId)) closeEditor();
-    saveScenarios();
-    syncModeUI();
-    toast("Deleted");
-  });
-
-  document.getElementById("btnExportSelected").addEventListener("click", () => {
+  function exportSelectedScenarios(){
     const ids = [...state.selectedScenarioIds];
     if(!ids.length) return toast("No scenarios selected");
     const list = state.scenarios.filter(s => state.selectedScenarioIds.has(s.id));
@@ -1078,62 +1132,93 @@
       });
       toast(`Downloading ${list.length} files...`);
     }
-  });
+  }
+
+  function deleteSelectedScenarios(){
+    const ids = [...state.selectedScenarioIds];
+    if(!ids.length) return toast("No scenarios selected");
+    if(!confirm(`Delete ${ids.length} selected scenario(s) from this browser?`)) return;
+    state.scenarios = state.scenarios.filter(s => !state.selectedScenarioIds.has(s.id));
+    state.selectedScenarioIds.clear();
+    state.scenarios.forEach(s => state.selectedScenarioIds.add(s.id));
+    if(state.editorScenarioId && !getScenarioById(state.editorScenarioId)) closeEditor();
+    saveScenarios();
+    renderScenarioList();
+    scenarioSelectedCount.textContent = String(state.selectedScenarioIds.size);
+    toast("Deleted");
+  }
 
   document.getElementById("btnSelectAll").addEventListener("click", () => {
     state.selectedScenarioIds = new Set(state.scenarios.map(s => s.id));
     renderScenarioList();
+    scenarioSelectedCount.textContent = String(state.selectedScenarioIds.size);
   });
   document.getElementById("btnSelectNone").addEventListener("click", () => {
     state.selectedScenarioIds.clear();
     renderScenarioList();
+    scenarioSelectedCount.textContent = String(state.selectedScenarioIds.size);
   });
 
-  function safeName(s){
-    return String(s).replace(/[^A-Za-z0-9._-]+/g, "_").slice(0, 160);
-  }
-
-  function downloadJSON(obj, filename){
-    const blob = new Blob([JSON.stringify(obj, null, 2)], {type:"application/json"});
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    URL.revokeObjectURL(a.href);
-    a.remove();
-  }
-
   // -----------------------------
-  // Raise hotkey mapping (numbers include Jam as largest)
+  // Mode switching
   // -----------------------------
-  function sortRaisesSmallToLarge(raises){
-    const key = (a)=>{
-      const m = a.toLowerCase().match(/raise\s*(\d+)/);
-      if(m) return parseInt(m[1],10);
-      return 1;
-    };
-    return [...raises].sort((a,b)=>key(a)-key(b));
-  }
+  function syncModeUI(){
+    modeSeg.querySelectorAll("button").forEach(b => {
+      b.classList.toggle("active", b.getAttribute("data-mode") === state.mode);
+    });
+    formatTag.textContent = `Mode: ${state.format}`;
+    saveJSON(LS_UI, {
+      leftWidth: parseInt(document.getElementById("leftPane").style.width || "360", 10),
+      format: state.format
+    });
 
-  function numberedAggroActions(scenario){
-    // 1..N are raise sizes (smallest->largest), and Jam is LAST (largest) if present.
-    const raises = sortRaisesSmallToLarge(scenario.actions.filter(a => a.toLowerCase().startsWith("raise")));
-    const out = [...raises];
-    if(scenario.actions.some(a => a.toLowerCase() === "jam")){
-      out.push("Jam");
+    renderScenarioHeaderActions();
+    renderScenarioList();
+
+    if(state.mode === "trainer"){
+      renderTrainerLeft();
+      renderTrainerMain();
+    }else if(state.mode === "editor"){
+      renderEditorLeft();
+      renderEditorMain();
+    }else if(state.mode === "library"){
+      renderLibraryLeft();
+      renderLibraryMain();
+    }else if(state.mode === "reports"){
+      renderReportsLeft();
+      renderReportsMain();
     }
-    // If there are no raises but Jam exists, Jam becomes "1".
-    return out;
+
+    setTimeout(() => fitAllGrids(), 0);
   }
 
+  modeSeg.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-mode]");
+    if(!btn) return;
+    state.mode = btn.getAttribute("data-mode");
+    syncModeUI();
+  });
+
+  document.getElementById("btnResetAll").addEventListener("click", () => {
+    if(!confirm("Reset all site data? This deletes imported scenarios and reports from this browser.")) return;
+    localStorage.removeItem(LS_SCEN);
+    localStorage.removeItem(LS_REP);
+    localStorage.removeItem(LS_UI);
+
+    state.scenarios = [];
+    state.selectedScenarioIds.clear();
+    state.sessionActive = false;
+
+    saveScenarios();
+    syncModeUI();
+    toast("Reset complete");
+  });
+
   // -----------------------------
-  // Trainer
+  // Trainer UI
   // -----------------------------
   function renderTrainerLeft(){
     leftTitle.textContent = "Trainer Controls";
-    const scen = state.activeScenarioId ? getScenarioById(state.activeScenarioId) : null;
-
     leftBody.innerHTML = `
       <div class="row" style="justify-content:space-between;">
         <div class="pill"><span class="muted">Format</span> <b>${state.format}</b></div>
@@ -1145,16 +1230,10 @@
       <div class="hr"></div>
 
       <div class="row" style="justify-content:space-between;">
-        <div class="pill"><span class="muted">Selected</span> <b>${scen ? escapeHTML(scen.name) : "—"}</b></div>
-      </div>
-
-      <div class="hr"></div>
-
-      <div class="row" style="justify-content:space-between;">
         <div class="pill"><span class="muted">Session length</span> <b>${state.sessionLen}</b></div>
         <input id="sessLen" type="range" min="5" max="60" step="1" value="${state.sessionLen}" />
       </div>
-      <div class="tiny muted">Default is 20 hands. Uses selected scenarios (checked) as pool.</div>
+      <div class="tiny muted">Default is 20 hands. Session samples from the scenarios you checked.</div>
 
       <div class="hr"></div>
 
@@ -1166,8 +1245,7 @@
       <div class="hr"></div>
 
       <div class="tiny muted">
-        Scoring: RNG 1–100 (lower = more aggressive). Best=100, Correct=70, Wrong=0.
-        Enter = next hand (after reveal).
+        Hotkeys: X=Fold, C=Call, Z=Jam, 1..9=Raise sizes (Jam is the largest number), Enter=Next (after reveal).
       </div>
     `;
 
@@ -1185,25 +1263,22 @@
 
   function renderTrainerMain(){
     mainTitle.textContent = "Trainer";
-    const scen = state.activeScenarioId ? getScenarioById(state.activeScenarioId) : null;
-    scenarioTag.textContent = scen ? scen.name : "No scenario selected";
 
     if(!state.sessionActive){
+      scenarioTag.textContent = "Select scenarios (left) · Import in Library";
       mainBody.innerHTML = `
-        <div class="row" style="gap:14px; align-items:flex-start;">
-          <div class="panel" style="flex:1; background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:14px;">
-            <h2 style="margin:0 0 8px; font-size:18px;">Ready to train</h2>
-            <div class="muted">Import scenarios on the left, select them, then start a session.</div>
-            <div class="hr"></div>
-            <div class="legend">
-              <span><span class="sw" style="background:var(--fold)"></span>Fold</span>
-              <span><span class="sw" style="background:var(--call)"></span>Call/Limp</span>
-              <span><span class="sw" style="background:var(--raise)"></span>Raise</span>
-              <span><span class="sw" style="background:var(--jam)"></span>Jam</span>
-            </div>
-            <div class="hr"></div>
-            <div class="tiny muted">Hotkeys: X=Fold, C=Call, Z=Jam, 1..9=Raise sizes (Jam is the largest size), Enter=Next.</div>
+        <div class="panel" style="background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:14px;">
+          <h2 style="margin:0 0 8px; font-size:18px;">Ready to train</h2>
+          <div class="muted">Check scenarios on the left, then start a session.</div>
+          <div class="hr"></div>
+          <div class="legend">
+            <span><span class="sw" style="background:var(--fold)"></span>Fold</span>
+            <span><span class="sw" style="background:var(--call)"></span>Call/Limp</span>
+            <span><span class="sw" style="background:var(--raise)"></span>Raise</span>
+            <span><span class="sw" style="background:var(--jam)"></span>Jam</span>
           </div>
+          <div class="hr"></div>
+          <div class="tiny muted">Import JSON is in <b>Library</b>. Create new scenarios via <b>New Scenario</b>.</div>
         </div>
       `;
       sessStat.textContent = "—";
@@ -1217,16 +1292,23 @@
       return;
     }
 
-    const {scenario, hand, rng, solverChoice, normalized} = ch;
+    const {scenario, hand, rng, solverChoice, normalized, cards} = ch;
+    scenarioTag.textContent = scenario.name;
+
     const info = parseScenarioName(scenario.name);
-
-    const cards = handToTwoCards(hand);
-    const raiseActions = scenario.actions.filter(a => a.toLowerCase().startsWith("raise"));
-    const raisesSorted = sortRaisesSmallToLarge(raiseActions);
-    const numHotkeys = numberedAggroActions(scenario); // [Raise(s)..., Jam?]
-    const jamKey = (numHotkeys.length && numHotkeys[numHotkeys.length-1] === "Jam") ? String(numHotkeys.length) : null;
-
     const gridPanelHeight = "calc(100vh - 56px - 14px - 14px - 140px)";
+
+    // Build buttons: Fold, Call, each Raise size, Jam
+    const hasCall = scenario.actions.some(a=>a.toLowerCase()==="call");
+    const raiseActions = sortRaisesSmallToLarge(scenario.actions.filter(a=>a.toLowerCase().startsWith("raise")));
+    const hasJam = scenario.actions.some(a=>a.toLowerCase()==="jam");
+
+    // hotkey numbers map: raise sizes then jam last
+    const numbered = numberedAggroActions(scenario); // array of actions in number order
+    const keyForAction = (act) => {
+      const idx = numbered.findIndex(x => x.toLowerCase() === act.toLowerCase());
+      return idx >= 0 ? String(idx+1) : "";
+    };
 
     mainBody.innerHTML = `
       <div class="row" style="justify-content:space-between; align-items:stretch; gap:14px;">
@@ -1236,6 +1318,8 @@
             <span class="tag">Spot: ${escapeHTML(info.pos || "—")}</span>
             <span class="tag">Hand #${state.currentIdx+1}/${state.sessionQueue.length}</span>
           </div>
+
+          <div class="scenarioName">${escapeHTML(scenario.name)}</div>
 
           <div class="cards">
             ${renderCardHTML(cards[0])}
@@ -1248,8 +1332,8 @@
           <div class="panel" style="background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:12px;">
             <div class="row" style="justify-content:space-between; align-items:center;">
               <div>
-                <div style="font-weight:800; font-size:15px;">Your decision</div>
-                <div class="tiny muted">Choose an action. You won’t see the strategy until after.</div>
+                <div style="font-weight:900; font-size:15px;">Your decision</div>
+                <div class="tiny muted">Choose an action. Strategy reveals after you act.</div>
               </div>
               <div class="pill"><span class="muted">Selected scenarios</span> <b>${state.selectedScenarioIds.size}</b></div>
             </div>
@@ -1258,19 +1342,22 @@
 
             <div class="actionBar" id="actionBar">
               <button class="actBtn actFold" data-act="Fold"><span>Fold</span><span class="k">X</span></button>
-              ${scenario.actions.some(a=>a.toLowerCase()==="call") ? `<button class="actBtn actCall" data-act="Call"><span>Call</span><span class="k">C</span></button>` : ``}
-              ${raisesSorted.length ? `<button class="actBtn actRaise" id="btnRaiseMain"><span>Raise</span><span class="k">1..</span></button>` : ``}
-              ${scenario.actions.some(a=>a.toLowerCase()==="jam") ? `<button class="actBtn actJam" data-act="Jam"><span>All-in</span><span class="k">${jamKey ? jamKey+" / " : ""}Z</span></button>` : ``}
-            </div>
+              ${hasCall ? `<button class="actBtn actCall" data-act="Call"><span>Call</span><span class="k">C</span></button>` : ``}
 
-            ${(raisesSorted.length || scenario.actions.some(a=>a.toLowerCase()==="jam")) ? `
-              <div class="raiseMenu" id="raiseMenu" style="display:none;">
-                ${numHotkeys.map((a,i)=>{
-                  const key = i+1;
-                  return `<span class="chip" data-raise="${escapeHTML(a)}">${escapeHTML(a)} <span class="mono muted">(${key})</span></span>`;
-                }).join("")}
-              </div>
-            ` : ``}
+              ${raiseActions.map(a => `
+                <button class="actBtn actRaise" data-act="${escapeHTML(a)}">
+                  <span>${escapeHTML(a)}</span>
+                  <span class="k">${keyForAction(a)}</span>
+                </button>
+              `).join("")}
+
+              ${hasJam ? `
+                <button class="actBtn actJam" data-act="Jam">
+                  <span>All-in</span>
+                  <span class="k">${keyForAction("Jam")}${keyForAction("Jam") ? " / " : ""}Z</span>
+                </button>
+              ` : ``}
+            </div>
 
             <div class="hr"></div>
 
@@ -1299,7 +1386,7 @@
         <div class="panel" style="flex:0 0 680px; max-width:45vw; min-width:560px; background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:12px; height:${gridPanelHeight};">
           <div class="row" style="justify-content:space-between; align-items:center;">
             <div>
-              <div style="font-weight:800;">Range grid</div>
+              <div style="font-weight:900;">Range grid</div>
               <div class="tiny muted">${state.reveal ? "Shown after action" : "Hidden until you act"}</div>
             </div>
             <div class="pill"><span class="muted">Scenario</span> <b class="mono">${escapeHTML(info.stack || "")}</b></div>
@@ -1312,25 +1399,11 @@
       </div>
     `;
 
+    // wire actions
     const actionBar = document.getElementById("actionBar");
     actionBar.querySelectorAll("[data-act]").forEach(btn => {
       btn.addEventListener("click", () => handleUserAction(btn.getAttribute("data-act")));
     });
-
-    if(raisesSorted.length || scenario.actions.some(a=>a.toLowerCase()==="jam")){
-      const btnRaiseMain = document.getElementById("btnRaiseMain");
-      const raiseMenu = document.getElementById("raiseMenu");
-      if(btnRaiseMain && raiseMenu){
-        btnRaiseMain.addEventListener("click", () => {
-          raiseMenu.style.display = raiseMenu.style.display === "none" ? "flex" : "none";
-        });
-      }
-      if(raiseMenu){
-        raiseMenu.querySelectorAll("[data-raise]").forEach(chip => {
-          chip.addEventListener("click", () => handleUserAction(chip.getAttribute("data-raise")));
-        });
-      }
-    }
 
     if(state.reveal){
       document.getElementById("btnNext").addEventListener("click", nextHand);
@@ -1339,45 +1412,28 @@
     // keyboard shortcuts
     window.onkeydown = (ev) => {
       if(!state.sessionActive) return;
-      const k = ev.key.toLowerCase();
 
-      // Enter goes next ONLY after reveal
+      // Enter -> next only after reveal
       if(state.reveal && ev.key === "Enter"){
         ev.preventDefault();
         return nextHand();
       }
-
-      // prevent answers before acting
+      // block input after reveal
       if(state.reveal) return;
 
+      const k = ev.key.toLowerCase();
       if(k === "x") return handleUserAction("Fold");
-      if(k === "c") {
-        if(ch.scenario.actions.some(a=>a.toLowerCase()==="call")) return handleUserAction("Call");
-      }
-      if(k === "z") {
-        if(ch.scenario.actions.some(a=>a.toLowerCase()==="jam")) return handleUserAction("Jam");
-      }
+      if(k === "c" && hasCall) return handleUserAction("Call");
+      if(k === "z" && hasJam) return handleUserAction("Jam");
 
-      // Numbers: 1..9 mapped to raise sizes, with Jam as largest if present
       if(/^[1-9]$/.test(k)){
         const n = parseInt(k,10);
-        const options = numberedAggroActions(ch.scenario); // [raise..., jam?]
-        const pick = options[n-1];
+        const pick = numbered[n-1];
         if(pick) return handleUserAction(pick);
       }
     };
 
     setTimeout(() => fitAllGrids(), 0);
-  }
-
-  function renderCardHTML(c){
-    return `
-      <div class="card">
-        <div class="r ${c.cls}">${c.rank}</div>
-        <div class="s ${c.cls}">${c.suit}</div>
-        <div class="mid ${c.cls}">${c.suit}</div>
-      </div>
-    `;
   }
 
   function startSession(){
@@ -1415,8 +1471,7 @@
     const scenario = getScenarioById(item.scenarioId);
     if(!scenario){
       state.currentIdx++;
-      setCurrentHandFromQueue();
-      return;
+      return setCurrentHandFromQueue();
     }
     const pctMap = scenario.grid[item.hand] || {};
     const pick = pickSolverAction(pctMap, scenario.actions);
@@ -1426,6 +1481,7 @@
       rng: pick.rng,
       solverChoice: pick.choice,
       normalized: pick.normalized,
+      cards: handToTwoCards(item.hand), // stable suits for this hand
     };
     state.reveal = false;
     state.lastTierClass = "";
@@ -1445,32 +1501,30 @@
     const ch = state.currentHand;
     if(!ch || state.reveal) return;
 
-    // action might come from numbered menu containing "Jam"
-    if(action === "Jam" && !ch.scenario.actions.some(a=>a.toLowerCase()==="jam")){
-      toast("Jam not available in this scenario");
+    const scenario = ch.scenario;
+
+    // Accept "Jam" special
+    if(action === "Jam" && !scenario.actions.some(a=>a.toLowerCase()==="jam")){
+      toast("Jam not available");
       return;
     }
 
-    if(!ch.scenario.actions.includes(action)){
-      // allow "Raise" alias: pick smallest raise if exists
-      if(action === "Raise"){
-        const raises = sortRaisesSmallToLarge(ch.scenario.actions.filter(a=>a.toLowerCase().startsWith("raise")));
-        if(raises.length) action = raises[0];
-      } else {
-        toast("Action not available in this scenario");
-        return;
-      }
+    // Validate action exists (case-insensitive)
+    const actual = scenario.actions.find(a => a.toLowerCase() === String(action).toLowerCase());
+    if(!actual){
+      toast("Action not available in this scenario");
+      return;
     }
 
-    const {tier, pts} = scoreAttempt(action, ch.solverChoice, ch.normalized, ch.scenario.actions);
+    const {tier, pts} = scoreAttempt(actual, ch.solverChoice, ch.normalized, scenario.actions);
     state.attempts.push({
       ts: nowISO(),
-      scenarioId: ch.scenario.id,
-      scenarioName: ch.scenario.name,
+      scenarioId: scenario.id,
+      scenarioName: scenario.name,
       hand: ch.hand,
       rng: ch.rng,
       solverChoice: ch.solverChoice,
-      userAction: action,
+      userAction: actual,
       tier,
       pts,
     });
@@ -1561,21 +1615,15 @@
     `;
   }
 
-  function labelFromRC(r,c){
-    const hi = RANKS[Math.min(r,c)];
-    const lo = RANKS[Math.max(r,c)];
-    if(r===c) return hi+lo;
-    return r < c ? `${hi}${lo}s` : `${hi}${lo}o`;
-  }
-
   // -----------------------------
   // Editor
   // -----------------------------
   function openEditor(id){
-    state.mode = "editor";
-    state.editorScenarioId = id;
     const scen = getScenarioById(id);
     if(!scen){ toast("Scenario not found"); return; }
+
+    state.mode = "editor";
+    state.editorScenarioId = id;
     state.editorDraft = JSON.parse(JSON.stringify(scen));
     state.editorDirty = false;
     state.selectedCells.clear();
@@ -1600,7 +1648,7 @@
     leftTitle.textContent = "Editor";
     const scen = state.editorDraft;
     if(!scen){
-      leftBody.innerHTML = `<div class="muted">Pick a scenario to edit from Library.</div>`;
+      leftBody.innerHTML = `<div class="muted">Pick a scenario to edit from the list above.</div>`;
       return;
     }
 
@@ -1608,14 +1656,22 @@
 
     leftBody.innerHTML = `
       <div class="row" style="justify-content:space-between;">
-        <div class="pill"><span class="muted">Scenario</span> <b>${escapeHTML(scen.name)}</b></div>
         <span class="badge ${state.editorDirty ? "warn":""}">${state.editorDirty ? "Unsaved changes" : "Saved"}</span>
+        <span class="tag">Actions: <b>${escapeHTML(actions.join(", "))}</b></span>
       </div>
 
       <div class="hr"></div>
 
       <div class="col">
-        <div style="font-weight:700;">Paint palette</div>
+        <div style="font-weight:900;">Scenario name</div>
+        <input class="textInput" id="scenNameInput" value="${escapeHTML(scen.name)}" />
+        <div class="tiny muted">Changes only persist after Save.</div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="col">
+        <div style="font-weight:900;">Paint palette</div>
         <div class="tiny muted">Drag over cells to paint these action frequencies. Sliders auto-normalize to 100.</div>
       </div>
 
@@ -1633,11 +1689,17 @@
 
       <div class="hr"></div>
 
-      <div class="tiny muted">
-        Tip: click-drag paints. Press Esc to clear selection.
-      </div>
+      <div class="tiny muted">Tip: click-drag paints. Press Esc to clear selection.</div>
     `;
 
+    // name input -> mark dirty
+    const nameInput = leftBody.querySelector("#scenNameInput");
+    nameInput.addEventListener("input", () => {
+      state.editorDraft.name = nameInput.value;
+      state.editorDirty = true;
+    });
+
+    // palette UI
     const pal = leftBody.querySelector("#paletteArea");
     pal.innerHTML = actions.map(a => {
       const v = Math.round((state.palette[a] ?? 0));
@@ -1656,6 +1718,7 @@
         const a = r.getAttribute("data-act");
         state.palette[a] = Number(r.value);
         state.palette = normalizePctMap(state.palette, actions);
+        state.editorDirty = true;
         renderEditorLeft();
         renderEditorMain();
       });
@@ -1665,6 +1728,7 @@
         const a = b.getAttribute("data-100");
         for(const x of actions) state.palette[x] = 0;
         state.palette[a] = 100;
+        state.editorDirty = true;
         renderEditorLeft();
         renderEditorMain();
       });
@@ -1705,30 +1769,29 @@
   function renderEditorMain(){
     mainTitle.textContent = "Editor";
     const scen = state.editorDraft;
-    scenarioTag.textContent = scen ? scen.name : "No scenario selected";
+    scenarioTag.textContent = scen ? scen.name : "—";
 
     if(!scen){
-      mainBody.innerHTML = `<div class="muted">Go to Library and click Edit on a scenario.</div>`;
+      mainBody.innerHTML = `<div class="muted">Pick a scenario to edit from the list above.</div>`;
+      window.onkeydown = null;
       return;
     }
 
     mainBody.innerHTML = `
-      <div class="row" style="justify-content:space-between; align-items:flex-start; gap:14px;">
-        <div class="panel" style="flex:1; background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:12px; height: calc(100vh - 56px - 14px - 14px - 120px);">
-          <div class="row" style="justify-content:space-between; align-items:center;">
-            <div>
-              <div style="font-weight:700;">Paint the grid</div>
-              <div class="tiny muted">Click-drag paints current palette onto cells. No autosave.</div>
-            </div>
-            <div class="row">
-              <span class="tag">Selected cells: <b>${state.selectedCells.size}</b></span>
-              <button class="btn small" id="btnClearSel">Clear selection</button>
-            </div>
+      <div class="panel" style="background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:12px; height: calc(100vh - 56px - 14px - 14px - 70px);">
+        <div class="row" style="justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-weight:900;">Paint the grid</div>
+            <div class="tiny muted">Click-drag paints current palette onto cells. No autosave.</div>
           </div>
-          <div class="hr"></div>
-          <div style="height: calc(100% - 52px);">
-            ${renderGridHTML(scen, null, true)}
+          <div class="row">
+            <span class="tag">Selected cells: <b>${state.selectedCells.size}</b></span>
+            <button class="btn small" id="btnClearSel">Clear selection</button>
           </div>
+        </div>
+        <div class="hr"></div>
+        <div style="height: calc(100% - 52px);">
+          ${renderGridHTML(scen, null, true)}
         </div>
       </div>
     `;
@@ -1790,25 +1853,32 @@
     leftBody.innerHTML = `
       <div class="row" style="justify-content:space-between;">
         <div class="pill"><span class="muted">Scenarios</span> <b>${state.scenarios.length}</b></div>
-        <button class="btn small" id="btnRefresh">Refresh</button>
+        <div class="row">
+          <button class="btn small" id="btnNewScenario">New Scenario</button>
+          <button class="btn small" id="btnExport">Export selected</button>
+          <button class="btn small danger" id="btnDelete">Delete selected</button>
+        </div>
       </div>
       <div class="hr"></div>
       <div class="tiny muted">
-        Use the scenario list above. Click “Open” to train, “Edit” to paint changes.
+        Import JSON via the top-left scenario panel header (Library only).
       </div>
     `;
-    leftBody.querySelector("#btnRefresh").addEventListener("click", () => {
-      loadScenarios();
-      renderScenarioList();
-      toast("Refreshed");
-    });
+    leftBody.querySelector("#btnNewScenario").addEventListener("click", () => createNewScenario(true));
+    leftBody.querySelector("#btnExport").addEventListener("click", exportSelectedScenarios);
+    leftBody.querySelector("#btnDelete").addEventListener("click", deleteSelectedScenarios);
   }
+
   function renderLibraryMain(){
     mainTitle.textContent = "Library";
+    scenarioTag.textContent = "Manage scenarios";
     mainBody.innerHTML = `
       <div class="panel" style="background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:14px;">
-        <h2 style="margin:0 0 8px; font-size:18px;">Scenario library</h2>
-        <div class="muted">Import JSON files on the left. Select scenarios to include in training sessions.</div>
+        <h2 style="margin:0 0 8px; font-size:18px;">Scenario management</h2>
+        <div class="muted">
+          Use <b>Import JSON</b> in the scenarios panel header, or <b>New Scenario</b> to create one from scratch.
+          Edit any scenario via the scenario list.
+        </div>
       </div>
     `;
     window.onkeydown = null;
@@ -1846,10 +1916,7 @@
     }).join("");
 
     list.querySelectorAll(".report[data-rep]").forEach(el => {
-      el.addEventListener("click", () => {
-        const id = el.getAttribute("data-rep");
-        renderReportDetail(id);
-      });
+      el.addEventListener("click", () => renderReportDetail(el.getAttribute("data-rep")));
     });
 
     leftBody.querySelector("#btnClearReports").addEventListener("click", () => {
@@ -1862,6 +1929,7 @@
 
   function renderReportsMain(){
     mainTitle.textContent = "Reports";
+    scenarioTag.textContent = "Session history";
     mainBody.innerHTML = `
       <div class="panel" style="background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:14px;">
         <h2 style="margin:0 0 8px; font-size:18px;">Session reports</h2>
@@ -1875,6 +1943,7 @@
     const reps = loadReports();
     const rep = reps.find(r => r.id === reportId);
     if(!rep) return toast("Report not found");
+
     mainTitle.textContent = "Report";
     scenarioTag.textContent = "Report detail";
 
@@ -1898,7 +1967,7 @@
       <div class="panel" style="background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:14px; overflow:auto; height: calc(100vh - 56px - 14px - 14px - 70px);">
         <div class="row" style="justify-content:space-between; align-items:center;">
           <div>
-            <div style="font-weight:800; font-size:16px;">${escapeHTML(rep.status)} · ${rep.avgScore}%</div>
+            <div style="font-weight:900; font-size:16px;">${escapeHTML(rep.status)} · ${rep.avgScore}%</div>
             <div class="tiny muted">${new Date(rep.createdAt).toLocaleString()} · ${rep.format} · ${rep.sessionLen} hands</div>
           </div>
           <button class="btn small" id="btnBackReports">Back</button>
@@ -1924,7 +1993,6 @@
         </table>
       </div>
     `;
-
     document.getElementById("btnBackReports").addEventListener("click", () => {
       syncModeUI();
       renderReportsMain();
@@ -1950,26 +2018,26 @@
   });
 
   // -----------------------------
-  // Buttons & events
+  // Initial render + scenario panel title
   // -----------------------------
-  modeSeg.addEventListener("click", (e) => {
-    const btn = e.target.closest("button[data-mode]");
-    if(!btn) return;
-    state.mode = btn.getAttribute("data-mode");
-    syncModeUI();
-  });
-
-  // Reports persistence helpers
-  function addReport(report){
-    const arr = loadReports();
-    arr.unshift(report);
-    saveJSON(LS_REP, arr.slice(0, 200));
+  function updateScenarioPanelTitle(){
+    scenarioPanelTitle.textContent = state.mode === "library"
+      ? "Scenarios (Import in this tab)"
+      : "Scenarios";
   }
 
+  function syncAll(){
+    updateScenarioPanelTitle();
+    syncModeUI();
+  }
+
+  // Mode-specific scenario header actions need state.mode set first
+  syncAll();
+
   // -----------------------------
-  // Init
+  // Start-up: also make sure grid fit after first paint
   // -----------------------------
-  syncModeUI();
+  setTimeout(() => fitAllGrids(), 0);
 
 })();
 </script>
