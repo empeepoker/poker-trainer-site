@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Preflop Trainer (Browser) – vNext</title>
+  <title>Preflop Trainer (Browser) – vNext+</title>
   <style>
     :root{
       --bg:#0b0f14;
@@ -24,6 +24,7 @@
       --warn:#ffcc66;
       --good:#5ce38a;
       --bad:#ff5c6a;
+      --info:#9bd7ff;
 
       --radius:14px;
       --shadow: 0 10px 30px rgba(0,0,0,.35);
@@ -50,12 +51,7 @@
       background:rgba(9,13,19,.7);
       backdrop-filter: blur(10px);
     }
-    .brand{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      min-width:220px;
-    }
+    .brand{display:flex;align-items:center;gap:10px;min-width:220px;}
     .dot{
       width:12px;height:12px;border-radius:50%;
       background:linear-gradient(145deg, #6aa6ff, #a06bff);
@@ -94,7 +90,7 @@
       font-size:13px;
       white-space:nowrap;
     }
-    .pill b{color:var(--text); font-weight:700}
+    .pill b{color:var(--text); font-weight:800}
     .btn{
       border:1px solid var(--line);
       background:rgba(16,24,36,.8);
@@ -126,41 +122,23 @@
       cursor:pointer;
       color:var(--muted);
       padding:0;
+      user-select:none;
     }
     .iconBtn:hover{filter:brightness(1.1); color:var(--text)}
     .iconBtn:active{transform:translateY(1px)}
     .iconBtn.primary{border-color:rgba(106,166,255,.35); background:rgba(106,166,255,.14)}
     .iconBtn.danger{border-color:rgba(255,92,106,.35); background:rgba(255,92,106,.10)}
 
-    .main{
-      height:calc(100vh - 56px);
-      display:flex;
-      overflow:hidden;
-    }
+    .main{height:calc(100vh - 56px);display:flex;overflow:hidden;}
     .left{
-      width:360px;
-      min-width:280px;
-      max-width:560px;
+      width:360px;min-width:280px;max-width:560px;
       border-right:1px solid var(--line);
       background:rgba(12,18,27,.68);
       backdrop-filter: blur(10px);
-      display:flex;
-      flex-direction:column;
-      overflow:hidden;
+      display:flex;flex-direction:column;overflow:hidden;
     }
-    .divider{
-      width:6px;
-      cursor:col-resize;
-      background:transparent;
-    }
-    .right{
-      flex:1;
-      display:flex;
-      flex-direction:column;
-      overflow:hidden;
-      padding:14px;
-      gap:14px;
-    }
+    .divider{width:6px;cursor:col-resize;background:transparent;}
+    .right{flex:1;display:flex;flex-direction:column;overflow:hidden;padding:14px;gap:14px;}
     .panel{
       border:1px solid var(--line);
       background:rgba(16,24,36,.75);
@@ -171,167 +149,106 @@
     .panelHeader{
       padding:12px 12px 10px;
       border-bottom:1px solid var(--line);
-      display:flex;
-      align-items:center;
-      gap:10px;
+      display:flex;align-items:center;gap:10px;
     }
-    .panelHeader h3{
-      margin:0;
-      font-size:14px;
-      letter-spacing:.2px;
-    }
+    .panelHeader h3{margin:0;font-size:14px;letter-spacing:.2px;}
     .panelBody{padding:12px}
     .muted{color:var(--muted)}
     .tiny{font-size:12px}
-    .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
-    .col{display:flex; flex-direction:column; gap:8px}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .col{display:flex;flex-direction:column;gap:8px}
     .hr{height:1px;background:var(--line);margin:10px 0}
     .mono{font-family:var(--mono)}
 
     .badge{
-      padding:5px 10px;
-      border-radius:999px;
-      border:1px solid var(--line);
-      font-size:12px;
-      color:var(--muted);
-      background:rgba(0,0,0,.18);
+      padding:5px 10px;border-radius:999px;border:1px solid var(--line);
+      font-size:12px;color:var(--muted);background:rgba(0,0,0,.18);
     }
     .badge.good{color:var(--good); border-color: rgba(92,227,138,.25); background:rgba(92,227,138,.08)}
     .badge.bad{color:var(--bad); border-color: rgba(255,92,106,.25); background:rgba(255,92,106,.08)}
     .badge.warn{color:var(--warn); border-color: rgba(255,204,102,.25); background:rgba(255,204,102,.08)}
     .tag{
-      display:inline-flex;
-      gap:6px;
-      align-items:center;
-      border:1px solid var(--line);
-      padding:4px 8px;
-      border-radius:999px;
-      background:rgba(0,0,0,.18);
-      color:var(--muted);
-      font-size:12px;
+      display:inline-flex;gap:6px;align-items:center;
+      border:1px solid var(--line);padding:4px 8px;border-radius:999px;
+      background:rgba(0,0,0,.18);color:var(--muted);font-size:12px;
     }
-    .sw{width:10px;height:10px;border-radius:3px; display:inline-block; margin-right:6px; vertical-align:middle}
+    .sw{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:6px;vertical-align:middle}
 
     /* Scenario list */
-    .list{
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-      max-height:360px;
-      overflow:auto;
-      padding-right:6px;
-    }
+    .list{display:flex;flex-direction:column;gap:8px;max-height:360px;overflow:auto;padding-right:6px;}
     .item{
       border:1px solid var(--line);
       background:rgba(15,22,33,.75);
-      border-radius:12px;
-      padding:10px;
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-    }
-    .itemTop{
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:10px;
-    }
-    .itemTitle{
-      font-size:13px;
-      color:var(--text);
-      line-height:1.25;
-      word-break:break-word;
-      cursor:pointer;
-    }
-    .itemTitle:hover{ text-decoration: underline; }
-    .itemMeta{
-      display:flex; gap:6px; flex-wrap:wrap;
-      color:var(--muted);
-      font-size:12px;
+      border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;
     }
 
-    /* Compact trainer list */
-    .itemCompact{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-    }
-    .itemLeft{
-      display:flex; gap:10px; align-items:flex-start; flex:1; min-width:0;
-    }
+    .itemCompact{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+    .itemLeft{display:flex;gap:10px;align-items:flex-start;flex:1;min-width:0;}
     .itemName{
-      font-size:13px; color:var(--text); line-height:1.25;
-      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      font-size:13px;color:var(--text);line-height:1.25;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
       cursor:pointer;
     }
-    .itemName:hover{ text-decoration: underline; }
-    .itemIcons{display:flex; gap:6px; align-items:center; flex:0 0 auto;}
+    .itemName:hover{text-decoration:underline;}
+    .itemIcons{display:flex;gap:6px;align-items:center;flex:0 0 auto;}
+
+    .itemTitle{font-size:13px;color:var(--text);line-height:1.25;word-break:break-word;cursor:pointer;}
+    .itemTitle:hover{text-decoration:underline;}
 
     /* Cards */
     .scenarioName{
-      font-size:16px;
-      font-weight:900;
-      letter-spacing:.2px;
-      margin-top:2px;
-      margin-bottom:4px;
-      color:var(--text);
+      font-size:16px;font-weight:900;letter-spacing:.2px;
+      margin-top:2px;margin-bottom:4px;color:var(--text);
       text-shadow:0 1px 1px rgba(0,0,0,.4);
     }
-    .cards{
-      display:flex; gap:10px; align-items:center;
-    }
+    .cards{display:flex;gap:10px;align-items:center;}
     .card{
-      width:56px; height:78px;
-      border-radius:12px;
+      width:56px;height:78px;border-radius:12px;
       background:linear-gradient(180deg, #ffffff 0%, #e8eef7 100%);
-      color:#111;
-      position:relative;
-      box-shadow: 0 10px 20px rgba(0,0,0,.35);
+      color:#111;position:relative;
+      box-shadow:0 10px 20px rgba(0,0,0,.35);
       border:1px solid rgba(0,0,0,.15);
       user-select:none;
     }
-    .card .r{
-      position:absolute; top:8px; left:8px;
-      font-size:18px; font-weight:900;
-      font-family: var(--mono);
-    }
-    .card .s{
-      position:absolute; top:30px; left:9px;
-      font-size:18px;
-    }
-    .card .mid{
-      position:absolute; inset:0;
-      display:flex; align-items:center; justify-content:center;
-      font-size:28px;
-      opacity:.9;
-    }
+    .card .r{position:absolute;top:8px;left:8px;font-size:18px;font-weight:900;font-family:var(--mono);}
+    .card .s{position:absolute;top:30px;left:9px;font-size:18px;}
+    .card .mid{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:28px;opacity:.9;}
     .redSuit{color:#c5162e}
     .blackSuit{color:#111}
 
     .rngBanner{
-      margin-top:8px;
-      padding:10px 12px;
-      border-radius:14px;
+      margin-top:8px;padding:10px 12px;border-radius:14px;
       border:1px solid rgba(255,204,102,.35);
       background:rgba(255,204,102,.08);
-      text-align:center;
-      font-weight:900;
-      letter-spacing:.6px;
-      color:var(--warn);
-      font-size:22px;
-      font-family:var(--mono);
+      text-align:center;font-weight:900;letter-spacing:.6px;
+      color:var(--warn);font-size:22px;font-family:var(--mono);
       text-shadow:0 1px 1px rgba(0,0,0,.35);
       user-select:none;
     }
 
-    /* Poker action buttons */
-    .actionBar{
+    .scoreBanner{
+      margin-top:10px;
+      padding:12px 12px;
+      border-radius:14px;
+      border:1px solid rgba(106,166,255,.28);
+      background:rgba(106,166,255,.10);
       display:flex;
+      justify-content:space-between;
+      align-items:center;
       gap:10px;
-      align-items:stretch;
-      flex-wrap:wrap;
     }
+    .scoreBanner .big{
+      font-size:22px;
+      font-weight:950;
+      letter-spacing:.4px;
+      font-family:var(--mono);
+      color:var(--text);
+      text-shadow:0 1px 1px rgba(0,0,0,.35);
+    }
+    .scoreBanner .sub{font-size:12px;color:var(--muted);}
+
+    /* Action buttons */
+    .actionBar{display:flex;gap:10px;align-items:stretch;flex-wrap:wrap;}
     .actBtn{
       border:1px solid var(--line);
       background:rgba(15,22,33,.75);
@@ -349,12 +266,12 @@
     }
     .actBtn:hover{filter:brightness(1.06)}
     .actBtn:active{transform:translateY(1px)}
+    .actBtn:disabled{opacity:.55; cursor:not-allowed}
+
     .k{
-      font-size:12px;
-      color:var(--muted);
+      font-size:12px;color:var(--muted);
       border:1px solid var(--line);
-      padding:3px 8px;
-      border-radius:999px;
+      padding:3px 8px;border-radius:999px;
       background:rgba(0,0,0,.22);
       font-family:var(--mono);
     }
@@ -363,14 +280,13 @@
     .actRaise{background:rgba(255,59,59,.14); border-color:rgba(255,59,59,.35)}
     .actJam{background:rgba(75,15,20,.40); border-color:rgba(170,40,55,.35)}
 
+    /* answer highlighting */
+    .hlWrong{outline:2px solid rgba(255,92,106,.95); outline-offset:-2px;}
+    .hlCorrect{outline:2px solid rgba(155,215,255,.95); outline-offset:-2px;}
+    .hlSolver{box-shadow:0 0 0 3px rgba(255,204,102,.55) inset;}
+
     /* Grid */
-    .gridWrap{
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-      height:100%;
-      overflow:hidden;
-    }
+    .gridWrap{display:flex;flex-direction:column;gap:10px;height:100%;overflow:hidden;}
     .grid{
       --cell: 44px;
       display:grid;
@@ -381,12 +297,13 @@
       border:1px solid var(--line);
       border-radius:14px;
       padding:6px;
-      overflow:hidden; /* no scrolling */
+      overflow:hidden;
       width:100%;
       height:100%;
       justify-content:center;
       align-content:center;
     }
+    .grid.small{ --cell: 24px; padding:6px; }
     .cell{
       position:relative;
       border-radius:8px;
@@ -406,28 +323,10 @@
       min-width:0;
       min-height:0;
     }
+    .grid.small .cell{font-size:10px;border-radius:6px;}
     .cell .lbl{position:relative; z-index:2}
-    .cell.sel{
-      outline:2px solid rgba(106,166,255,.9);
-      outline-offset:-2px;
-    }
-    .cell .hint{
-      position:absolute;
-      right:6px; bottom:4px;
-      font-size:10px;
-      color:rgba(255,255,255,.75);
-      z-index:2;
-      opacity:.0;
-      transition:opacity .15s ease;
-    }
-    .cell:hover .hint{opacity:.85}
-    .legend{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      color:var(--muted);
-      font-size:12px;
-    }
+    .cell.sel{outline:2px solid rgba(106,166,255,.9);outline-offset:-2px;}
+    .legend{display:flex;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:12px;}
 
     .toast{
       position:fixed;
@@ -445,29 +344,7 @@
       pointer-events:none;
       z-index:999;
     }
-    .toast.show{
-      opacity:1;
-      transform: translateY(0);
-    }
-
-    .reportList{
-      max-height:260px;
-      overflow:auto;
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-      padding-right:6px;
-    }
-    .report{
-      border:1px solid var(--line);
-      background:rgba(15,22,33,.75);
-      border-radius:12px;
-      padding:10px;
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-      font-size:13px;
-    }
+    .toast.show{opacity:1;transform: translateY(0);}
 
     .textInput{
       width:100%;
@@ -483,20 +360,111 @@
       box-shadow: 0 0 0 4px rgba(106,166,255,.12);
     }
 
-    .inspectBox{
+    /* selection strip (cell % display) */
+    .selStrip{
       border:1px solid var(--line);
       background:rgba(15,22,33,.55);
       border-radius:14px;
       padding:10px 12px;
     }
-    .inspectTitle{
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
+    .selStripTop{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
+    .selStripTop b{font-size:13px;}
+    .selStripRow{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;}
+
+    /* reports (pretty) */
+    .reportList{
+      max-height:300px;
+      overflow:auto;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      padding-right:6px;
     }
-    .inspectTitle b{font-size:13px}
-    .inspectRow{
-      margin-top:8px;
-      display:flex; gap:8px; flex-wrap:wrap;
+    .reportCard{
+      border:1px solid var(--line);
+      background:rgba(15,22,33,.75);
+      border-radius:12px;
+      padding:10px;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      cursor:pointer;
     }
+    .reportCard:hover{filter:brightness(1.06)}
+    .reportCard.active{outline:2px solid rgba(106,166,255,.75); outline-offset:-2px;}
+    .table{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      overflow:hidden;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:rgba(15,22,33,.55);
+    }
+    .table th, .table td{
+      padding:10px 10px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      font-size:13px;
+      vertical-align:top;
+    }
+    .table th{color:var(--muted); font-weight:800; text-align:left; background:rgba(0,0,0,.12);}
+    .trBad{background:rgba(255,92,106,.08);}
+    .trWarn{background:rgba(255,204,102,.06);}
+    .trGood{background:rgba(155,215,255,.06);}
+    .rowClick{cursor:pointer}
+    .rowClick:hover{filter:brightness(1.06)}
+    .split2{display:grid;grid-template-columns: 1.25fr .85fr; gap:14px; align-items:start;}
+    .stickyBox{
+      border:1px solid var(--line);
+      background:rgba(15,22,33,.55);
+      border-radius:14px;
+      padding:12px;
+    }
+    .bigResult{
+      text-align:center;
+      padding:18px 12px;
+      border-radius:16px;
+      border:1px solid rgba(106,166,255,.28);
+      background:rgba(106,166,255,.10);
+    }
+    .bigResult .pct{font-size:52px;font-weight:950;font-family:var(--mono);letter-spacing:.8px;}
+    .bigResult .title{margin-top:6px;font-size:20px;font-weight:950;}
+    .bigResult .subtitle{margin-top:6px;color:var(--muted);font-size:13px;}
+    .toggle{display:inline-flex;gap:10px;align-items:center}
+    .toggle input{transform:scale(1.1);}
+
+    .actionChip{
+      border:1px solid var(--line);
+      background:rgba(0,0,0,.18);
+      border-radius:999px;
+      padding:4px 9px;
+      font-size:12px;
+      color:var(--muted);
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      white-space:nowrap;
+    }
+
+    .actionManage{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .actionPills{display:flex;gap:8px;flex-wrap:wrap;}
+    .pillX{
+      width:18px;height:18px;border-radius:7px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,92,106,.10);
+      color:var(--bad);
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      font-weight:900;
+      user-select:none;
+    }
+    .pillX:hover{filter:brightness(1.1)}
   </style>
 </head>
 <body>
@@ -516,17 +484,15 @@
       <button data-mode="reports">Reports</button>
     </div>
 
-    <div class="seg" id="formatSeg" title="MTT and Cash are separate scenario libraries">
+    <div class="seg" id="formatSeg" title="MTT and Cash have separate libraries">
       <button data-format="MTT" class="active">MTT</button>
       <button data-format="Cash">Cash</button>
     </div>
 
     <div class="spacer"></div>
 
-    <!-- Editor Save controls -->
     <div class="row" id="topEditorControls" style="display:none;"></div>
 
-    <div class="pill"><span class="muted">Session</span> <b id="sessStat">—</b></div>
     <button class="btn small" id="btnResetAll">Reset site data</button>
   </div>
 
@@ -554,10 +520,6 @@
           <div class="row">
             <button class="btn small" id="btnSelectAll">Select all</button>
             <button class="btn small" id="btnSelectNone">Select none</button>
-          </div>
-
-          <div class="tiny muted" style="margin-top:10px;" id="scenarioPanelHint">
-            MTT/Cash are separate scenario lists.
           </div>
         </div>
       </div>
@@ -591,14 +553,18 @@
 
 <script>
 (() => {
-  // Storage keys (new schema)
-  const LS_SCEN = "pokerTrainerScenarios_v2";
-  const LS_REP  = "pokerTrainerReports_v2";
-  const LS_UI   = "pokerTrainerUI_v2";
+  /* =========================
+     Storage keys (v3)
+  ========================= */
+  const LS_SCEN = "pokerTrainerScenarios_v3";
+  const LS_REP  = "pokerTrainerReports_v3";
+  const LS_UI   = "pokerTrainerUI_v3";
 
   const RANKS = "AKQJT98765432";
 
-  // DOM refs
+  /* =========================
+     DOM refs
+  ========================= */
   const modeSeg = document.getElementById("modeSeg");
   const formatSeg = document.getElementById("formatSeg");
   const leftTitle = document.getElementById("leftTitle");
@@ -610,16 +576,15 @@
   const scenarioSelectedCount = document.getElementById("scenarioSelectedCount");
   const scenarioTag = document.getElementById("scenarioTag");
   const formatTag = document.getElementById("formatTag");
-  const sessStat = document.getElementById("sessStat");
 
   const scenarioHeaderActions = document.getElementById("scenarioHeaderActions");
   const scenarioPanelTitle = document.getElementById("scenarioPanelTitle");
-  const scenarioPanelHint = document.getElementById("scenarioPanelHint");
   const fileImport = document.getElementById("fileImport");
-
   const topEditorControls = document.getElementById("topEditorControls");
 
-  // Utils
+  /* =========================
+     Utils
+  ========================= */
   function toast(msg){
     const el = document.getElementById("toast");
     el.textContent = msg;
@@ -658,10 +623,15 @@
   }
   function byId(id){ return document.getElementById(id); }
 
-  // Grid fit
-  function fitAllGrids(){ document.querySelectorAll(".grid").forEach(g => fitGrid(g)); }
+  /* =========================
+     Grid fit
+  ========================= */
+  function fitAllGrids(){
+    document.querySelectorAll(".grid").forEach(g => fitGrid(g));
+  }
   function fitGrid(gridEl){
     if(!gridEl) return;
+    if(gridEl.classList.contains("small")) return; // fixed
     const rect = gridEl.getBoundingClientRect();
     if(rect.width < 60 || rect.height < 60) return;
 
@@ -688,13 +658,16 @@
     resizeT = setTimeout(() => fitAllGrids(), 60);
   });
 
-  // Scenario normalization
+  /* =========================
+     Scenario normalization + migration
+  ========================= */
   function normalizeScenario(raw, assignFormat){
     if(!raw || typeof raw !== "object") throw new Error("Invalid JSON");
     const name = String(raw.name ?? raw.scenarioName ?? raw.title ?? "Unnamed Scenario");
     const tags = (raw.tags && typeof raw.tags==="object") ? raw.tags : {};
     const grid = raw.grid && typeof raw.grid==="object" ? raw.grid : null;
     if(!grid) throw new Error("Scenario missing grid");
+
     let actions = Array.isArray(raw.actions) ? raw.actions.map(String) : null;
     if(!actions){
       const anyHand = Object.keys(grid)[0];
@@ -703,6 +676,7 @@
     }
     if(!actions.includes("Fold")) actions.unshift("Fold");
 
+    // Keep only known keys, fill missing
     for(const hand of Object.keys(grid)){
       const obj = grid[hand] || {};
       for(const a of actions){
@@ -715,31 +689,70 @@
     }
 
     const format = String(raw.format || tags.format || assignFormat || "MTT");
+    const fmt = (format === "Cash") ? "Cash" : "MTT";
     return {
       id: raw.id || crypto.randomUUID(),
       name,
       actions,
-      tags: {...tags, format},
-      format,
+      tags: {...tags, format: fmt},
+      format: fmt,
       grid,
       created: raw.created || "import",
       updatedAt: nowISO(),
     };
   }
 
-  // State
+  function migrateOlderIfNeeded(){
+    // If v3 exists, do nothing
+    if(localStorage.getItem(LS_SCEN)) return;
+
+    // Try from v2, v1 keys
+    const tryKeys = ["pokerTrainerScenarios_v2","pokerTrainerScenarios_v1"];
+    for(const k of tryKeys){
+      const s = localStorage.getItem(k);
+      if(!s) continue;
+      try{
+        const arr = JSON.parse(s);
+        if(Array.isArray(arr)){
+          const converted = arr.map(sc => normalizeScenario(sc, sc.format || sc.tags?.format || "MTT"));
+          saveJSON(LS_SCEN, converted);
+          break;
+        }
+      }catch{}
+    }
+
+    // Reports
+    if(!localStorage.getItem(LS_REP)){
+      const r2 = localStorage.getItem("pokerTrainerReports_v2") || localStorage.getItem("pokerTrainerReports_v1");
+      if(r2){
+        try{ saveJSON(LS_REP, JSON.parse(r2)); }catch{}
+      }
+    }
+    // UI
+    if(!localStorage.getItem(LS_UI)){
+      const u2 = localStorage.getItem("pokerTrainerUI_v2") || localStorage.getItem("pokerTrainerUI_v1");
+      if(u2){
+        try{ saveJSON(LS_UI, JSON.parse(u2)); }catch{}
+      }
+    }
+  }
+
+  /* =========================
+     State
+  ========================= */
   const state = {
     mode: "trainer",
     format: "MTT",
 
-    scenariosAll: [],                    // all scenarios across formats
+    scenariosAll: [],
+
     selectedIdsByFormat: { MTT: new Set(), Cash: new Set() },
-
-    // browsing (outside edit mode)
     browseScenarioIdByFormat: { MTT: null, Cash: null },
-    inspect: { hand:null, scenarioId:null }, // clicked cell inspector
 
-    // Trainer session
+    // cell selection display
+    selection: { scenarioId: null, hand: null },
+
+    // trainer
     sessionLen: 20,
     sessionActive: false,
     sessionQueue: [],
@@ -747,8 +760,20 @@
     currentHand: null,
     reveal: false,
     attempts: [],
+    lastTierClass: "",
+    lastUserAction: null,
+    showGridAfterAnswer: true,
+    trainerResults: null,          // {reportId, reportObj, config}
+    lastSessionConfig: null,       // persisted for restart on results screen
+    lastSessionScore: 0,
 
-    // Editor
+    // reports
+    reportSelectedId: null,
+    reportFilter: "all",           // all | wrong | correct | best
+    reportSort: "errors",          // errors | time | pts | scenario
+    reportSelectedAttemptIdx: null,
+
+    // editor
     editorScenarioId: null,
     editorDraft: null,
     editorDirty: false,
@@ -757,31 +782,15 @@
     palette: {},
   };
 
-  // Migration: if old v1 key exists, pull into v2 (as MTT) once
-  function migrateV1IfNeeded(){
-    const v2 = localStorage.getItem(LS_SCEN);
-    if(v2) return;
-    const old = localStorage.getItem("pokerTrainerScenarios_v1");
-    if(!old) return;
-    try{
-      const arr = JSON.parse(old);
-      if(Array.isArray(arr)){
-        const converted = arr.map(s => {
-          // preserve existing as MTT by default
-          const raw = {...s};
-          raw.format = raw.format || (raw.tags?.format) || "MTT";
-          return normalizeScenario(raw, raw.format);
-        });
-        saveJSON(LS_SCEN, converted);
-      }
-    }catch{}
-  }
-
+  /* =========================
+     UI persistence
+  ========================= */
   function loadUI(){
     const ui = loadJSON(LS_UI, null);
     if(ui && typeof ui === "object"){
       if(ui.leftWidth) document.getElementById("leftPane").style.width = ui.leftWidth + "px";
       if(ui.format === "MTT" || ui.format === "Cash") state.format = ui.format;
+
       if(ui.selectedIdsByFormat){
         for(const fmt of ["MTT","Cash"]){
           const arr = ui.selectedIdsByFormat[fmt];
@@ -794,6 +803,8 @@
           if(typeof id === "string") state.browseScenarioIdByFormat[fmt] = id;
         }
       }
+      if(typeof ui.sessionLen === "number") state.sessionLen = ui.sessionLen;
+      if(typeof ui.showGridAfterAnswer === "boolean") state.showGridAfterAnswer = ui.showGridAfterAnswer;
     }
   }
   function saveUI(){
@@ -805,98 +816,68 @@
         Cash: [...state.selectedIdsByFormat.Cash],
       },
       browseScenarioIdByFormat: state.browseScenarioIdByFormat,
+      sessionLen: state.sessionLen,
+      showGridAfterAnswer: state.showGridAfterAnswer,
     });
   }
 
+  /* =========================
+     Scenarios
+  ========================= */
   function loadScenarios(){
     const arr = loadJSON(LS_SCEN, []);
     state.scenariosAll = Array.isArray(arr) ? arr : [];
-    // Ensure format field exists
     for(const s of state.scenariosAll){
       if(!s.id) s.id = crypto.randomUUID();
       const fmt = s.format || s.tags?.format || "MTT";
       s.format = (fmt === "Cash") ? "Cash" : "MTT";
       s.tags = s.tags || {};
       s.tags.format = s.format;
+      s.actions = Array.isArray(s.actions) ? s.actions : ["Fold"];
+      if(!s.actions.includes("Fold")) s.actions.unshift("Fold");
+      s.grid = s.grid || {};
     }
-    // Default select all per format if empty
+    // default select all per format
     for(const fmt of ["MTT","Cash"]){
       if(state.selectedIdsByFormat[fmt].size === 0){
         state.scenariosAll.filter(s => s.format === fmt).forEach(s => state.selectedIdsByFormat[fmt].add(s.id));
       }
-      // Default browse scenario
       if(!state.browseScenarioIdByFormat[fmt]){
         const first = state.scenariosAll.find(s => s.format === fmt);
         state.browseScenarioIdByFormat[fmt] = first ? first.id : null;
       }
     }
   }
-  function saveScenarios(){ saveJSON(LS_SCEN, state.scenariosAll); saveUI(); }
-
-  function getVisibleScenarios(){
-    return state.scenariosAll.filter(s => s.format === state.format);
-  }
-  function getSelectedSet(){
-    return state.selectedIdsByFormat[state.format];
-  }
-  function setSelectedSet(newSet){
-    state.selectedIdsByFormat[state.format] = newSet;
+  function saveScenarios(){
+    saveJSON(LS_SCEN, state.scenariosAll);
     saveUI();
   }
-  function getBrowseScenarioId(){
-    return state.browseScenarioIdByFormat[state.format];
-  }
-  function setBrowseScenarioId(id){
-    state.browseScenarioIdByFormat[state.format] = id;
-    saveUI();
-  }
-  function getScenarioById(id){
-    return state.scenariosAll.find(s => s.id === id) || null;
-  }
+  function getScenarioById(id){ return state.scenariosAll.find(s => s.id === id) || null; }
+  function getVisibleScenarios(){ return state.scenariosAll.filter(s => s.format === state.format); }
+  function getSelectedSet(){ return state.selectedIdsByFormat[state.format]; }
+  function setSelectedSet(newSet){ state.selectedIdsByFormat[state.format] = newSet; saveUI(); }
+  function getBrowseScenarioId(){ return state.browseScenarioIdByFormat[state.format]; }
+  function setBrowseScenarioId(id){ state.browseScenarioIdByFormat[state.format] = id; saveUI(); }
 
+  /* =========================
+     Reports
+  ========================= */
   function loadReports(){
     const arr = loadJSON(LS_REP, []);
     return Array.isArray(arr) ? arr : [];
   }
+  function saveReports(arr){
+    saveJSON(LS_REP, arr);
+  }
   function addReport(report){
     const arr = loadReports();
     arr.unshift(report);
-    saveJSON(LS_REP, arr.slice(0, 200));
+    saveReports(arr.slice(0, 250));
   }
 
-  migrateV1IfNeeded();
-  loadUI();
-  loadScenarios();
-
-  // URL autoplay (new-tab Play)
-  function applyAutoplayFromURL(){
-    const u = new URL(window.location.href);
-    const fmt = u.searchParams.get("format");
-    const playId = u.searchParams.get("play");
-    const mode = u.searchParams.get("mode");
-    if(fmt === "MTT" || fmt === "Cash") state.format = fmt;
-    if(mode && ["trainer","editor","library","reports"].includes(mode)) state.mode = mode;
-
-    if(playId){
-      const sc = getScenarioById(playId);
-      if(sc && sc.format === state.format){
-        setBrowseScenarioId(sc.id);
-        // select only this scenario for this format
-        setSelectedSet(new Set([sc.id]));
-        // start immediately if in trainer
-        state.mode = "trainer";
-        syncModeUI();
-        startSessionForScenarioId(sc.id);
-        // clean URL (optional)
-        u.searchParams.delete("play");
-        u.searchParams.delete("mode");
-        history.replaceState({}, "", u.toString());
-        toast("Started in new tab");
-      }
-    }
-  }
-
-  // Actions / colors / gradients
+  /* =========================
+     Colors / action ordering
+  ========================= */
   function actionColor(action){
     const a = String(action).toLowerCase();
     if(a === "fold") return getCSS("--fold");
@@ -911,6 +892,38 @@
       return getCSS("--raise");
     }
     return "#777";
+  }
+
+  function sortRaisesSmallToLarge(raises){
+    const key = (a)=>{
+      const m = String(a).toLowerCase().match(/raise\s*(\d+)/i);
+      if(m) return parseInt(m[1],10);
+      return 1;
+    };
+    return [...raises].sort((a,b)=>key(a)-key(b));
+  }
+
+  // Aggressive -> passive (for left->right in cell)
+  function aggressionOrder(actions){
+    const raises = actions.filter(a => String(a).toLowerCase().startsWith("raise"));
+    const jam = actions.filter(a => String(a).toLowerCase() === "jam");
+    const call = actions.filter(a => String(a).toLowerCase() === "call");
+    const fold = actions.filter(a => String(a).toLowerCase() === "fold");
+    const raiseKey = (a) => {
+      const m = String(a).toLowerCase().match(/raise\s*(\d+)/);
+      if(m) return parseInt(m[1],10);
+      return 1;
+    };
+    // larger raise more aggressive
+    raises.sort((a,b) => raiseKey(b) - raiseKey(a));
+    return [...jam, ...raises, ...call, ...fold];
+  }
+
+  function numberedAggroActions(scenario){
+    const raises = sortRaisesSmallToLarge(scenario.actions.filter(a => String(a).toLowerCase().startsWith("raise")));
+    const out = [...raises];
+    if(scenario.actions.some(a => String(a).toLowerCase() === "jam")) out.push("Jam");
+    return out;
   }
 
   function normalizePctMap(map, actions){
@@ -943,10 +956,12 @@
   }
 
   function buildGradientForCell(pctMap, actions){
+    const order = aggressionOrder(actions); // aggressive left
+    const norm = normalizePctMap(pctMap || {}, actions);
     const parts = [];
     let start = 0;
-    for(const a of actions){
-      const v = Math.max(0, Number(pctMap[a] ?? 0));
+    for(const a of order){
+      const v = Math.max(0, Number(norm[a] ?? 0));
       if(v <= 0.001) continue;
       const end = start + v;
       const col = actionColor(a);
@@ -962,7 +977,9 @@
     return `linear-gradient(to right, ${parts.join(", ")})`;
   }
 
-  // 169 combo labels
+  /* =========================
+     169 combos
+  ========================= */
   function labelFromRC(r,c){
     const hi = RANKS[Math.min(r,c)];
     const lo = RANKS[Math.max(r,c)];
@@ -979,11 +996,11 @@
     return out;
   }
   const ALL_LABELS = allComboLabels();
-  function randomHandLabel(){
-    return ALL_LABELS[Math.floor(Math.random()*ALL_LABELS.length)];
-  }
+  function randomHandLabel(){ return ALL_LABELS[Math.floor(Math.random()*ALL_LABELS.length)]; }
 
-  // Cards (stable per hand)
+  /* =========================
+     Cards
+  ========================= */
   const suits = [
     {s:"♠", cls:"blackSuit"}, {s:"♥", cls:"redSuit"},
     {s:"♦", cls:"redSuit"},   {s:"♣", cls:"blackSuit"},
@@ -1017,37 +1034,9 @@
     `;
   }
 
-  // Raise size sorting + hotkeys
-  function sortRaisesSmallToLarge(raises){
-    const key = (a)=>{
-      const m = a.toLowerCase().match(/raise\s*(\d+)/i);
-      if(m) return parseInt(m[1],10);
-      return 1;
-    };
-    return [...raises].sort((a,b)=>key(a)-key(b));
-  }
-  function numberedAggroActions(scenario){
-    const raises = sortRaisesSmallToLarge(scenario.actions.filter(a => a.toLowerCase().startsWith("raise")));
-    const out = [...raises];
-    if(scenario.actions.some(a => a.toLowerCase() === "jam")) out.push("Jam");
-    return out;
-  }
-
-  // RNG scoring
-  function aggressionOrder(actions){
-    const raises = actions.filter(a => a.toLowerCase().startsWith("raise"));
-    const jam = actions.filter(a => a.toLowerCase() === "jam");
-    const call = actions.filter(a => a.toLowerCase() === "call");
-    const fold = actions.filter(a => a.toLowerCase() === "fold");
-    const raiseKey = (a) => {
-      const m = a.toLowerCase().match(/raise\s*(\d+)/);
-      if(m) return parseInt(m[1],10);
-      return 1;
-    };
-    raises.sort((a,b) => raiseKey(b) - raiseKey(a));
-    return [...jam, ...raises, ...call, ...fold];
-  }
-
+  /* =========================
+     RNG selection + scoring
+  ========================= */
   function pickSolverAction(pctMap, actions){
     const order = aggressionOrder(actions);
     const norm = normalizePctMap(pctMap, actions);
@@ -1063,7 +1052,6 @@
     }
     return {rng, choice, normalized: norm};
   }
-
   function scoreAttempt(userAction, solverChoice, pctMap, actions){
     const norm = normalizePctMap(pctMap, actions);
     const used = Number(norm[userAction] ?? 0) > 0.0001;
@@ -1072,48 +1060,298 @@
     return {tier:"wrong", pts:0};
   }
 
-  // Inspector (click cell -> show %)
-  function setInspector(scenarioId, hand){
-    state.inspect = { scenarioId, hand };
-    // Re-render only the right panel; simplest is full mode render.
+  /* =========================
+     Selection strip (cell % display)
+  ========================= */
+  function setSelection(scenarioId, hand){
+    state.selection = { scenarioId, hand };
+    // In editor we still want to keep editor UI; in other modes this updates display
     renderMain();
   }
-  function renderInspectorHTML(){
-    const {scenarioId, hand} = state.inspect;
-    if(!scenarioId || !hand) {
-      return `
-        <div class="inspectBox">
-          <div class="inspectTitle">
-            <b>Cell inspector</b>
-            <span class="badge mono">Click a hand</span>
-          </div>
-          <div class="tiny muted" style="margin-top:6px;">Works in Trainer (when grid visible) and Library browse.</div>
+  function renderSelectionStripHTML(opts){
+    const compact = !!(opts && opts.compact);
+    const sel = state.selection;
+    const s = sel.scenarioId ? getScenarioById(sel.scenarioId) : null;
+
+    if(!s){
+      return compact ? "" : `
+        <div class="selStrip">
+          <div class="selStripTop"><b>Selected</b><span class="tag mono">—</span></div>
         </div>
       `;
     }
-    const s = getScenarioById(scenarioId);
-    if(!s) return `
-      <div class="inspectBox"><b>Cell inspector</b><div class="tiny muted">Scenario not found.</div></div>
-    `;
-    const pct = s.grid?.[hand] || {};
-    const norm = normalizePctMap(pct, s.actions);
-    return `
-      <div class="inspectBox">
-        <div class="inspectTitle">
-          <b>Cell: <span class="mono">${escapeHTML(hand)}</span></b>
-          <span class="tag"><span class="mono">${escapeHTML(s.name)}</span></span>
-        </div>
-        <div class="inspectRow">
+    const hand = sel.hand;
+    const title = hand ? `<span class="tag mono">${escapeHTML(hand)}</span>` : `<span class="tag mono">—</span>`;
+    const body = hand ? (() => {
+      const pct = s.grid?.[hand] || {};
+      const norm = normalizePctMap(pct, s.actions);
+      return `
+        <div class="selStripRow">
           ${s.actions.map(a => {
             const v = Math.round((norm[a]||0)*10)/10;
             return `<span class="tag"><span class="sw" style="background:${actionColor(a)}"></span>${escapeHTML(a)}: <b>${v}%</b></span>`;
           }).join("")}
         </div>
+      `;
+    })() : "";
+
+    return `
+      <div class="selStrip">
+        <div class="selStripTop">
+          <b>Selected</b>
+          <div class="row" style="gap:8px;">
+            ${title}
+            <span class="tag">${escapeHTML(s.name)}</span>
+          </div>
+        </div>
+        ${body}
       </div>
     `;
   }
 
-  // Scenario header actions
+  /* =========================
+     Grid renderer
+  ========================= */
+  function renderGridHTML(scenario, highlightHand, opts){
+    const actions = scenario.actions;
+    const allowClick = !!(opts && opts.allowClickSelect);
+    const sid = (opts && opts.scenarioId) ? opts.scenarioId : scenario.id;
+    const isSmall = !!(opts && opts.small);
+
+    const cells = [];
+    for(let r=0;r<13;r++){
+      for(let c=0;c<13;c++){
+        const hand = labelFromRC(r,c);
+        const pctMap = scenario.grid[hand] || {};
+        const grad = buildGradientForCell(pctMap, actions);
+        const isHL = hand === highlightHand;
+        const isSel = (state.selection.scenarioId === sid && state.selection.hand === hand);
+        const cls = `cell ${isSel ? "sel":""}`;
+        cells.push(`
+          <div class="${cls}" data-hand="${hand}" data-sid="${sid}" data-clickselect="${allowClick ? "1":"0"}"
+               style="background-image:${grad}; ${isHL ? "outline:2px solid rgba(255,204,102,.9); outline-offset:-2px;" : ""}">
+            <div class="lbl mono">${hand}</div>
+          </div>
+        `);
+      }
+    }
+
+    // Legend is useful but keep tight; show only when not small
+    const legend = isSmall ? "" : `
+      <div class="legend">
+        ${aggressionOrder(actions).map(a => `<span><span class="sw" style="background:${actionColor(a)}"></span>${escapeHTML(a)}</span>`).join("")}
+      </div>
+    `;
+
+    return `
+      <div class="gridWrap">
+        ${legend}
+        <div class="grid ${isSmall ? "small":""}" id="grid">${cells.join("")}</div>
+      </div>
+    `;
+  }
+
+  /* =========================
+     Action management (Editor)
+  ========================= */
+  function getActionCounts(actions){
+    const hasCall = actions.some(a => String(a).toLowerCase() === "call");
+    const hasJam = actions.some(a => String(a).toLowerCase() === "jam");
+    const raises = actions.filter(a => String(a).toLowerCase().startsWith("raise"));
+    const nRaises = raises.length;
+    return {hasCall, hasJam, nRaises};
+  }
+
+  function canonicalActionsFromParts(hasCall, nRaises, hasJam){
+    const out = ["Fold"];
+    if(hasCall) out.push("Call");
+    for(let i=1;i<=nRaises;i++) out.push(`Raise ${i}`);
+    if(hasJam) out.push("Jam");
+    return out;
+  }
+
+  function renameRaiseKey(key, newIndex){
+    return `Raise ${newIndex}`;
+  }
+
+  function rebuildScenarioActions(scen, hasCall, nRaises, hasJam){
+    const oldActions = scen.actions.slice();
+    const newActions = canonicalActionsFromParts(hasCall, nRaises, hasJam);
+
+    // Build mapping for raise renumbering
+    const oldRaises = sortRaisesSmallToLarge(oldActions.filter(a => String(a).toLowerCase().startsWith("raise")));
+    const newRaises = [];
+    for(let i=1;i<=nRaises;i++) newRaises.push(`Raise ${i}`);
+
+    // map old raise keys in order to new raise keys (truncate or expand)
+    const raiseMap = new Map();
+    for(let i=0;i<Math.min(oldRaises.length, newRaises.length);i++){
+      raiseMap.set(oldRaises[i], newRaises[i]);
+    }
+
+    // transform each hand map
+    for(const hand of ALL_LABELS){
+      const oldMap = scen.grid[hand] || {};
+      const newMap = {};
+      for(const a of newActions){
+        newMap[a] = 0;
+      }
+
+      // carry over Fold / Call / Jam directly if present, raise via mapping
+      for(const a of oldActions){
+        if(a === "Fold" && newMap["Fold"] != null) newMap["Fold"] += Number(oldMap[a]||0);
+        else if(a === "Call" && newMap["Call"] != null) newMap["Call"] += Number(oldMap[a]||0);
+        else if(a === "Jam" && newMap["Jam"] != null) newMap["Jam"] += Number(oldMap[a]||0);
+        else if(String(a).toLowerCase().startsWith("raise")){
+          const mapped = raiseMap.get(a);
+          if(mapped && newMap[mapped] != null) newMap[mapped] += Number(oldMap[a]||0);
+        }
+      }
+
+      // If some removed actions existed, redistribute proportionally via normalize
+      const norm = normalizePctMap(newMap, newActions);
+      scen.grid[hand] = norm;
+    }
+
+    scen.actions = newActions;
+    return scen;
+  }
+
+  /* =========================
+     Create new scenario
+  ========================= */
+  function emptyGridForActions(actions){
+    const grid = {};
+    for(const hand of ALL_LABELS){
+      const obj = {};
+      for(const a of actions) obj[a] = 0;
+      obj["Fold"] = 100;
+      grid[hand] = obj;
+    }
+    return grid;
+  }
+
+  function createNewScenario(openEditorAfter=true){
+    const name = (prompt(`Scenario name (saved under ${state.format})`) || "").trim();
+    if(!name) return;
+
+    const includeCall = (prompt("Include Call/Limp? (y/n)", "n") || "n").trim().toLowerCase().startsWith("y");
+    const raiseCountRaw = (prompt("How many non-jam raise sizes? (0-6)", "1") || "1").trim();
+    let raiseCount = parseInt(raiseCountRaw, 10);
+    if(!Number.isFinite(raiseCount) || raiseCount < 0) raiseCount = 0;
+    if(raiseCount > 6) raiseCount = 6;
+    const includeJam = (prompt("Include Jam (all-in)? (y/n)", "y") || "y").trim().toLowerCase().startsWith("y");
+
+    const actions = canonicalActionsFromParts(includeCall, raiseCount, includeJam);
+
+    const scen = {
+      id: crypto.randomUUID(),
+      name,
+      actions,
+      tags: { format: state.format },
+      format: state.format,
+      grid: emptyGridForActions(actions),
+      created: "local",
+      updatedAt: nowISO(),
+    };
+
+    state.scenariosAll.push(scen);
+    const set = new Set([...getSelectedSet()]);
+    set.add(scen.id);
+    setSelectedSet(set);
+    setBrowseScenarioId(scen.id);
+
+    saveScenarios();
+    renderScenarioList();
+    toast("Created");
+    if(openEditorAfter) openEditor(scen.id);
+  }
+
+  /* =========================
+     Import / export / delete
+  ========================= */
+  fileImport.addEventListener("change", async (e) => {
+    const files = Array.from(e.target.files || []);
+    if(!files.length) return;
+
+    let added = 0;
+    for(const f of files){
+      try{
+        const text = await f.text();
+        const raw = JSON.parse(text);
+        const scen = normalizeScenario(raw, state.format);
+
+        const idx = state.scenariosAll.findIndex(s => s.format === scen.format && s.name === scen.name);
+        if(idx >= 0){
+          scen.id = state.scenariosAll[idx].id;
+          state.scenariosAll[idx] = scen;
+        }else{
+          state.scenariosAll.push(scen);
+        }
+
+        const set = new Set([...state.selectedIdsByFormat[scen.format]]);
+        set.add(scen.id);
+        state.selectedIdsByFormat[scen.format] = set;
+
+        if(scen.format === state.format) setBrowseScenarioId(scen.id);
+        added++;
+      }catch(err){
+        console.error(err);
+        toast(`Failed: ${f.name}`);
+      }
+    }
+    saveScenarios();
+    renderScenarioList();
+    toast(`Imported ${added}`);
+    e.target.value = "";
+  });
+
+  function exportSelectedScenarios(){
+    const selectedSet = getSelectedSet();
+    const list = getVisibleScenarios().filter(s => selectedSet.has(s.id));
+    if(list.length === 0) return toast("Nothing selected");
+    if(list.length === 1){
+      downloadJSON(list[0], safeName(list[0].name) + ".json");
+    }else{
+      list.forEach((sc, i) => setTimeout(() => downloadJSON(sc, safeName(sc.name)+".json"), i*120));
+      toast(`Downloading ${list.length} files...`);
+    }
+  }
+
+  function deleteSelectedScenarios(){
+    const selectedSet = getSelectedSet();
+    const ids = [...selectedSet];
+    if(!ids.length) return toast("Nothing selected");
+    if(!confirm(`Delete ${ids.length} selected from ${state.format} (this browser)?`)) return;
+
+    state.scenariosAll = state.scenariosAll.filter(s => !(s.format === state.format && selectedSet.has(s.id)));
+    const remain = getVisibleScenarios();
+    setSelectedSet(new Set(remain.map(s => s.id)));
+
+    const b = getBrowseScenarioId();
+    const stillExists = b && getScenarioById(b) && getScenarioById(b).format === state.format;
+    if(!stillExists) setBrowseScenarioId(remain[0]?.id || null);
+
+    if(state.editorScenarioId && !getScenarioById(state.editorScenarioId)) closeEditor();
+
+    saveScenarios();
+    renderScenarioList();
+    toast("Deleted");
+    renderMain();
+  }
+
+  byId("btnSelectAll").addEventListener("click", () => {
+    setSelectedSet(new Set(getVisibleScenarios().map(s => s.id)));
+    renderScenarioList();
+  });
+  byId("btnSelectNone").addEventListener("click", () => {
+    setSelectedSet(new Set());
+    renderScenarioList();
+  });
+
+  /* =========================
+     Scenario list
+  ========================= */
   function renderScenarioHeaderActions(){
     scenarioHeaderActions.innerHTML = "";
 
@@ -1131,28 +1369,20 @@
       importBtn.textContent = "Import JSON";
       importBtn.addEventListener("click", ()=> fileImport.click());
       scenarioHeaderActions.appendChild(importBtn);
-
       scenarioHeaderActions.appendChild(mkBtn("New", "primary", () => createNewScenario(true)));
-      scenarioHeaderActions.appendChild(mkBtn("Export selected", "", exportSelectedScenarios));
-      scenarioHeaderActions.appendChild(mkBtn("Delete selected", "danger", deleteSelectedScenarios));
-      scenarioPanelHint.textContent = "Library: click a scenario name to browse its grid + click cells to inspect.";
-
+      scenarioHeaderActions.appendChild(mkBtn("Export", "", exportSelectedScenarios));
+      scenarioHeaderActions.appendChild(mkBtn("Delete", "danger", deleteSelectedScenarios));
     } else if(state.mode === "trainer"){
       scenarioHeaderActions.appendChild(mkBtn("New", "primary", () => createNewScenario(true)));
-      scenarioPanelHint.textContent = "Trainer: click a scenario name to browse, or hit ▶ to train just that scenario.";
-
     } else if(state.mode === "editor"){
       scenarioHeaderActions.appendChild(mkBtn("New", "primary", () => createNewScenario(true)));
-      scenarioPanelHint.textContent = "Editor: paint ranges. Save (Ctrl/⌘+S) to keep changes.";
-
     } else if(state.mode === "reports"){
-      scenarioPanelHint.textContent = "Reports: sessions stored locally in this browser.";
+      // nothing
     }
 
     scenarioPanelTitle.textContent = `Scenarios (${state.format})`;
   }
 
-  // Scenario list
   function renderScenarioList(){
     scenarioList.innerHTML = "";
     const visible = getVisibleScenarios();
@@ -1161,7 +1391,6 @@
     scenarioSelectedCount.textContent = String(selectedSet.size);
 
     const sorted = [...visible].sort((a,b) => (a.name||"").localeCompare(b.name||""));
-
     const compact = (state.mode === "trainer");
 
     for(const s of sorted){
@@ -1179,32 +1408,30 @@
               </div>
             </div>
             <div class="itemIcons">
-              <button class="iconBtn primary" title="Play this scenario (Ctrl/Cmd/Shift: new tab)" data-play="${s.id}">▶</button>
+              <button class="iconBtn primary" title="Play (Ctrl/Cmd/Shift = new tab)" data-play="${s.id}">▶</button>
               <button class="iconBtn" title="Edit" data-edit="${s.id}">✎</button>
             </div>
           </div>
         `;
       } else {
-        // Non-trainer list (more info + edit)
         el.innerHTML = `
-          <div class="itemTop">
-            <div style="display:flex; gap:10px; align-items:flex-start;">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+            <div style="display:flex;gap:10px;align-items:flex-start;">
               <input type="checkbox" ${checked ? "checked":""} data-id="${s.id}" />
               <div>
-                <div class="itemTitle" data-browse="${s.id}" title="Browse grid">${escapeHTML(s.name)}</div>
-                <div class="itemMeta">
-                  <span class="tag">Actions: ${escapeHTML((s.actions||[]).join(", "))}</span>
+                <div class="itemTitle" data-browse="${s.id}">${escapeHTML(s.name)}</div>
+                <div class="row" style="margin-top:8px;">
+                  <span class="tag">Actions: <b>${escapeHTML((s.actions||[]).join(", "))}</b></span>
                   <span class="tag">Format: <b>${escapeHTML(s.format)}</b></span>
                 </div>
               </div>
             </div>
-            <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+            <div class="row" style="gap:8px;">
               <button class="iconBtn" title="Edit" data-edit="${s.id}">✎</button>
             </div>
           </div>
         `;
       }
-
       scenarioList.appendChild(el);
     }
 
@@ -1227,8 +1454,9 @@
       btn.addEventListener("click", () => {
         const id = btn.getAttribute("data-browse");
         setBrowseScenarioId(id);
-        // reset inspector to avoid mismatch if switching scenarios
-        state.inspect = { scenarioId: id, hand: null };
+        state.selection = {scenarioId:id, hand:null};
+        // leaving results screen if any
+        if(state.mode === "trainer" && state.trainerResults) state.trainerResults = null;
         renderMain();
       });
     });
@@ -1244,7 +1472,6 @@
           window.open(u.toString(), "_blank");
           return;
         }
-        // same tab: select only this scenario and start
         setBrowseScenarioId(id);
         setSelectedSet(new Set([id]));
         state.mode = "trainer";
@@ -1254,156 +1481,70 @@
     });
   }
 
-  // Create new scenario
-  function emptyGridForActions(actions){
-    const grid = {};
-    for(const hand of ALL_LABELS){
-      const obj = {};
-      for(const a of actions) obj[a] = 0;
-      obj["Fold"] = 100;
-      grid[hand] = obj;
+  /* =========================
+     Editor
+  ========================= */
+  function openEditor(id){
+    const scen = getScenarioById(id);
+    if(!scen){ toast("Not found"); return; }
+
+    state.mode = "editor";
+    state.editorScenarioId = id;
+    state.editorDraft = JSON.parse(JSON.stringify(scen));
+    state.editorDirty = false;
+    state.selectedCells.clear();
+
+    state.palette = {};
+    for(const a of state.editorDraft.actions){
+      state.palette[a] = (a === "Fold") ? 100 : 0;
     }
-    return grid;
+
+    state.selection = {scenarioId:id, hand:null};
+    syncModeUI();
+    toast("Editor opened");
+  }
+  function closeEditor(){
+    state.editorScenarioId = null;
+    state.editorDraft = null;
+    state.editorDirty = false;
+    state.selectedCells.clear();
   }
 
-  function createNewScenario(openEditorAfter=true){
-    const name = (prompt(`Scenario name (will be saved under ${state.format})\nExample: 20bb - BTN - RFI`) || "").trim();
-    if(!name) return;
-
-    const includeCall = (prompt("Include Call/Limp action? (y/n)", "n") || "n").trim().toLowerCase().startsWith("y");
-    const raiseCountRaw = (prompt("How many non-jam raise sizes? (0-6)", "1") || "1").trim();
-    let raiseCount = parseInt(raiseCountRaw, 10);
-    if(!Number.isFinite(raiseCount) || raiseCount < 0) raiseCount = 0;
-    if(raiseCount > 6) raiseCount = 6;
-
-    const includeJam = (prompt("Include Jam (all-in) action? (y/n)", "y") || "y").trim().toLowerCase().startsWith("y");
-
-    const actions = ["Fold"];
-    if(includeCall) actions.push("Call");
-    for(let i=1;i<=raiseCount;i++){
-      actions.push(`Raise ${i}`);
-    }
-    if(includeJam) actions.push("Jam");
-
-    const scen = {
-      id: crypto.randomUUID(),
-      name,
-      actions,
-      tags: { format: state.format },
-      format: state.format,
-      grid: emptyGridForActions(actions),
-      created: "local",
-      updatedAt: nowISO(),
-    };
-
-    state.scenariosAll.push(scen);
-    // select it in its format
-    const set = new Set([...getSelectedSet()]);
-    set.add(scen.id);
-    setSelectedSet(set);
-    setBrowseScenarioId(scen.id);
-
-    saveScenarios();
-    renderScenarioList();
-    toast("Created scenario");
-
-    if(openEditorAfter) openEditor(scen.id);
-  }
-
-  // Import / export / delete
-  fileImport.addEventListener("change", async (e) => {
-    const files = Array.from(e.target.files || []);
-    if(!files.length) return;
-
-    let added = 0;
-    for(const f of files){
-      try{
-        const text = await f.text();
-        const raw = JSON.parse(text);
-        const scen = normalizeScenario(raw, state.format);
-
-        // upsert by name within same format
-        const idx = state.scenariosAll.findIndex(s => s.format === scen.format && s.name === scen.name);
-        if(idx >= 0){
-          scen.id = state.scenariosAll[idx].id;
-          state.scenariosAll[idx] = scen;
-        }else{
-          state.scenariosAll.push(scen);
-        }
-
-        // select it
-        const set = new Set([...state.selectedIdsByFormat[scen.format]]);
-        set.add(scen.id);
-        state.selectedIdsByFormat[scen.format] = set;
-
-        // browse it if on this format
-        if(scen.format === state.format) setBrowseScenarioId(scen.id);
-
-        added++;
-      }catch(err){
-        console.error(err);
-        toast(`Failed: ${f.name}`);
-      }
-    }
-
-    saveScenarios();
-    renderScenarioList();
-    toast(`Imported ${added} scenario(s) to ${state.format}`);
-    e.target.value = "";
-  });
-
-  function exportSelectedScenarios(){
-    const selectedSet = getSelectedSet();
-    const list = getVisibleScenarios().filter(s => selectedSet.has(s.id));
-    if(list.length === 0) return toast("No scenarios selected");
-    if(list.length === 1){
-      downloadJSON(list[0], safeName(list[0].name) + ".json");
-    }else{
-      list.forEach((sc, i) => {
-        setTimeout(() => downloadJSON(sc, safeName(sc.name) + ".json"), i * 120);
-      });
-      toast(`Downloading ${list.length} files...`);
+  function saveEditorChanges(){
+    if(!state.editorDraft) return;
+    const idx = state.scenariosAll.findIndex(s => s.id === state.editorDraft.id);
+    if(idx >= 0){
+      state.editorDraft.updatedAt = nowISO();
+      state.editorDraft.format = state.editorDraft.format || state.format;
+      state.editorDraft.tags = state.editorDraft.tags || {};
+      state.editorDraft.tags.format = state.editorDraft.format;
+      state.scenariosAll[idx] = state.editorDraft;
+      saveScenarios();
+      state.editorDirty = false;
+      toast("Saved");
+      renderScenarioList();
+      renderEditorLeft();
+      renderTopEditorControls();
     }
   }
-
-  function deleteSelectedScenarios(){
-    const selectedSet = getSelectedSet();
-    const ids = [...selectedSet];
-    if(!ids.length) return toast("No scenarios selected");
-    if(!confirm(`Delete ${ids.length} selected scenario(s) from ${state.format} on this browser?`)) return;
-
-    state.scenariosAll = state.scenariosAll.filter(s => !(s.format === state.format && selectedSet.has(s.id)));
-
-    // reset selection to all remaining in this format
-    const remain = getVisibleScenarios();
-    setSelectedSet(new Set(remain.map(s => s.id)));
-
-    // fix browse
-    const b = getBrowseScenarioId();
-    const stillExists = b && getScenarioById(b) && getScenarioById(b).format === state.format;
-    if(!stillExists){
-      setBrowseScenarioId(remain[0]?.id || null);
+  function discardEditorChanges(){
+    if(!state.editorDraft) return;
+    if(!confirm("Discard changes?")) return;
+    const original = getScenarioById(state.editorScenarioId);
+    if(!original) return;
+    state.editorDraft = JSON.parse(JSON.stringify(original));
+    state.editorDirty = false;
+    state.selectedCells.clear();
+    state.palette = {};
+    for(const a of state.editorDraft.actions){
+      state.palette[a] = (a === "Fold") ? 100 : 0;
     }
-
-    // if editing deleted scenario
-    if(state.editorScenarioId && !getScenarioById(state.editorScenarioId)) closeEditor();
-
-    saveScenarios();
-    renderScenarioList();
-    toast("Deleted");
-    renderMain();
+    toast("Discarded");
+    renderEditorLeft();
+    renderEditorMain();
+    renderTopEditorControls();
   }
 
-  byId("btnSelectAll").addEventListener("click", () => {
-    setSelectedSet(new Set(getVisibleScenarios().map(s => s.id)));
-    renderScenarioList();
-  });
-  byId("btnSelectNone").addEventListener("click", () => {
-    setSelectedSet(new Set());
-    renderScenarioList();
-  });
-
-  // Editor save controls in top bar
   function renderTopEditorControls(){
     if(state.mode !== "editor" || !state.editorDraft){
       topEditorControls.style.display = "none";
@@ -1412,7 +1553,7 @@
     }
     topEditorControls.style.display = "flex";
     topEditorControls.innerHTML = `
-      <span class="badge ${state.editorDirty ? "warn" : "good"}">${state.editorDirty ? "Unsaved changes" : "Saved"}</span>
+      <span class="badge ${state.editorDirty ? "warn" : "good"}">${state.editorDirty ? "Unsaved" : "Saved"}</span>
       <button class="btn small primary" id="topSave" ${state.editorDirty ? "" : "disabled"}>Save (Ctrl/⌘+S)</button>
       <button class="btn small" id="topDiscard" ${state.editorDirty ? "" : "disabled"}>Discard</button>
     `;
@@ -1420,186 +1561,747 @@
     topEditorControls.querySelector("#topDiscard").addEventListener("click", discardEditorChanges);
   }
 
-  // Mode switching
-  function syncModeUI(){
-    modeSeg.querySelectorAll("button").forEach(b => {
-      b.classList.toggle("active", b.getAttribute("data-mode") === state.mode);
-    });
-    formatSeg.querySelectorAll("button").forEach(b => {
-      b.classList.toggle("active", b.getAttribute("data-format") === state.format);
-    });
-
-    formatTag.textContent = `Format: ${state.format}`;
-    renderScenarioHeaderActions();
-    renderScenarioList();
-    renderTopEditorControls();
-    renderLeft();
-    renderMain();
-    saveUI();
-    setTimeout(() => fitAllGrids(), 0);
-  }
-
-  modeSeg.addEventListener("click", (e) => {
-    const btn = e.target.closest("button[data-mode]");
-    if(!btn) return;
-
-    if(state.mode === "editor" && state.editorDirty){
-      const ok = confirm("You have unsaved changes. Leave without saving?");
-      if(!ok) return;
-    }
-    state.mode = btn.getAttribute("data-mode");
-    syncModeUI();
-  });
-
-  formatSeg.addEventListener("click", (e) => {
-    const btn = e.target.closest("button[data-format]");
-    if(!btn) return;
-
-    if(state.mode === "editor" && state.editorDirty){
-      const ok = confirm("You have unsaved changes. Switch format without saving?");
-      if(!ok) return;
-    }
-    const nextFmt = btn.getAttribute("data-format");
-    if(nextFmt === state.format) return;
-
-    // stop current session when switching library
-    if(state.sessionActive){
-      state.sessionActive = false;
-      state.sessionQueue = [];
-      state.currentHand = null;
-      state.reveal = false;
-      state.attempts = [];
-      sessStat.textContent = "—";
+  function renderEditorLeft(){
+    leftTitle.textContent = "Editor";
+    const scen = state.editorDraft;
+    if(!scen){
+      leftBody.innerHTML = `<div class="muted">Pick a scenario to edit.</div>`;
+      return;
     }
 
-    state.format = nextFmt;
-    // ensure browse is set
-    if(!getBrowseScenarioId()){
-      const first = getVisibleScenarios()[0];
-      setBrowseScenarioId(first ? first.id : null);
-    }
-    // reset inspector to current browse scenario
-    const b = getBrowseScenarioId();
-    state.inspect = { scenarioId: b, hand: null };
-    closeEditor();
-    syncModeUI();
-  });
+    const actions = scen.actions;
+    const parts = getActionCounts(actions);
 
-  // Warn on refresh/close if dirty
-  window.addEventListener("beforeunload", (e) => {
-    if(state.editorDirty){
-      e.preventDefault();
-      e.returnValue = "";
-    }
-  });
-
-  byId("btnResetAll").addEventListener("click", () => {
-    if(!confirm("Reset all site data? This deletes scenarios and reports from this browser.")) return;
-    localStorage.removeItem(LS_SCEN);
-    localStorage.removeItem(LS_REP);
-    localStorage.removeItem(LS_UI);
-    // also remove old v1 data if present
-    localStorage.removeItem("pokerTrainerScenarios_v1");
-    localStorage.removeItem("pokerTrainerReports_v1");
-    localStorage.removeItem("pokerTrainerUI_v1");
-
-    state.scenariosAll = [];
-    state.selectedIdsByFormat = { MTT: new Set(), Cash: new Set() };
-    state.browseScenarioIdByFormat = { MTT: null, Cash: null };
-    state.inspect = {scenarioId:null, hand:null};
-    state.sessionActive = false;
-
-    saveScenarios();
-    syncModeUI();
-    toast("Reset complete");
-  });
-
-  // Left pane renderer
-  function renderLeft(){
-    if(state.mode === "trainer") renderTrainerLeft();
-    else if(state.mode === "editor") renderEditorLeft();
-    else if(state.mode === "library") renderLibraryLeft();
-    else if(state.mode === "reports") renderReportsLeft();
-  }
-
-  // Main pane renderer
-  function renderMain(){
-    if(state.mode === "trainer") renderTrainerMain();
-    else if(state.mode === "editor") renderEditorMain();
-    else if(state.mode === "library") renderLibraryMain();
-    else if(state.mode === "reports") renderReportsMain();
-  }
-
-  // Trainer UI
-  function renderTrainerLeft(){
-    leftTitle.textContent = "Trainer Controls";
     leftBody.innerHTML = `
       <div class="row" style="justify-content:space-between;">
-        <div class="pill"><span class="muted">Session length</span> <b>${state.sessionLen}</b></div>
-        <input id="sessLen" type="range" min="5" max="60" step="1" value="${state.sessionLen}" />
+        <span class="badge ${state.editorDirty ? "warn":""}">${state.editorDirty ? "Unsaved" : "Saved"}</span>
+        <span class="tag">Format: <b>${escapeHTML(scen.format || state.format)}</b></span>
       </div>
-      <div class="tiny muted">Default is 20 hands.</div>
+
+      <div class="hr"></div>
+
+      <div class="col">
+        <div style="font-weight:950;">Scenario name</div>
+        <input class="textInput" id="scenNameInput" value="${escapeHTML(scen.name)}" />
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="actionManage">
+        <div style="font-weight:950;">Actions</div>
+        <div class="actionPills" id="actionPills"></div>
+        <div class="row" style="gap:8px;">
+          <button class="btn small" id="addCall" ${parts.hasCall ? "disabled":""}>+ Call</button>
+          <button class="btn small" id="addRaise" ${parts.nRaises>=6 ? "disabled":""}>+ Raise</button>
+          <button class="btn small" id="addJam" ${parts.hasJam ? "disabled":""}>+ Jam</button>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="col">
+        <div style="font-weight:950;">Palette</div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="col" id="paletteArea"></div>
 
       <div class="hr"></div>
 
       <div class="row">
-        <button class="btn primary" id="btnStart">${state.sessionActive ? "Restart session" : "Start session"}</button>
-        <button class="btn" id="btnStop" ${state.sessionActive ? "" : "disabled"}>Stop</button>
+        <button class="btn primary" id="btnSave" ${state.editorDirty ? "" : "disabled"}>Save (Ctrl/⌘+S)</button>
+        <button class="btn" id="btnDiscard" ${state.editorDirty ? "" : "disabled"}>Discard</button>
+        <button class="btn" id="btnExportDraft">Export JSON</button>
+      </div>
+    `;
+
+    const nameInput = leftBody.querySelector("#scenNameInput");
+    nameInput.addEventListener("input", () => {
+      state.editorDraft.name = nameInput.value;
+      state.editorDirty = true;
+      renderTopEditorControls();
+      renderEditorLeft();
+      renderScenarioList();
+    });
+
+    // action pills with remove
+    const pills = leftBody.querySelector("#actionPills");
+    const order = aggressionOrder(actions); // show aggressive first
+    pills.innerHTML = order.map(a => {
+      const removable = (a !== "Fold");
+      return `
+        <span class="actionChip">
+          <span class="sw" style="background:${actionColor(a)}"></span>
+          <span>${escapeHTML(a)}</span>
+          ${removable ? `<span class="pillX" data-rm="${escapeHTML(a)}">×</span>` : ``}
+        </span>
+      `;
+    }).join("");
+
+    pills.querySelectorAll("[data-rm]").forEach(x => {
+      x.addEventListener("click", () => {
+        const rm = x.getAttribute("data-rm");
+        removeActionFromEditor(rm);
+      });
+    });
+
+    leftBody.querySelector("#addCall").addEventListener("click", () => addActionToEditor("Call"));
+    leftBody.querySelector("#addRaise").addEventListener("click", () => addActionToEditor("Raise"));
+    leftBody.querySelector("#addJam").addEventListener("click", () => addActionToEditor("Jam"));
+
+    // palette sliders
+    const pal = leftBody.querySelector("#paletteArea");
+    pal.innerHTML = actions.map(a => {
+      const v = Math.round((state.palette[a] ?? (a==="Fold"?100:0)));
+      return `
+        <div class="row" style="justify-content:space-between; gap:10px;">
+          <span class="tag" style="min-width:120px;"><span class="sw" style="background:${actionColor(a)}"></span>${escapeHTML(a)}</span>
+          <input type="range" min="0" max="100" step="1" value="${v}" data-act="${escapeHTML(a)}" style="flex:1" />
+          <span class="pill mono" style="min-width:56px; justify-content:center;"><b>${v}%</b></span>
+          <button class="btn small" data-100="${escapeHTML(a)}">100%</button>
+        </div>
+      `;
+    }).join("");
+
+    pal.querySelectorAll('input[type="range"][data-act]').forEach(r => {
+      r.addEventListener("input", () => {
+        const a = r.getAttribute("data-act");
+        state.palette[a] = Number(r.value);
+        state.palette = normalizePctMap(state.palette, actions);
+        state.editorDirty = true;
+        renderTopEditorControls();
+        renderEditorLeft();
+        renderEditorMain();
+      });
+    });
+
+    pal.querySelectorAll('button[data-100]').forEach(b => {
+      b.addEventListener("click", () => {
+        const a = b.getAttribute("data-100");
+        for(const x of actions) state.palette[x] = 0;
+        state.palette[a] = 100;
+        state.editorDirty = true;
+        renderTopEditorControls();
+        renderEditorLeft();
+        renderEditorMain();
+      });
+    });
+
+    leftBody.querySelector("#btnSave").addEventListener("click", saveEditorChanges);
+    leftBody.querySelector("#btnDiscard").addEventListener("click", discardEditorChanges);
+    leftBody.querySelector("#btnExportDraft").addEventListener("click", () => {
+      if(!state.editorDraft) return;
+      downloadJSON(state.editorDraft, safeName(state.editorDraft.name) + ".json");
+    });
+  }
+
+  function addActionToEditor(kind){
+    const s = state.editorDraft;
+    if(!s) return;
+    const parts = getActionCounts(s.actions);
+
+    let hasCall = parts.hasCall;
+    let hasJam  = parts.hasJam;
+    let nRaises = parts.nRaises;
+
+    if(kind === "Call") hasCall = true;
+    else if(kind === "Jam") hasJam = true;
+    else if(kind === "Raise") nRaises = Math.min(6, nRaises + 1);
+
+    rebuildScenarioActions(s, hasCall, nRaises, hasJam);
+
+    // palette: ensure all keys exist
+    const newPal = {};
+    for(const a of s.actions) newPal[a] = (a === "Fold") ? (state.palette[a] ?? 100) : (state.palette[a] ?? 0);
+    state.palette = normalizePctMap(newPal, s.actions);
+
+    state.editorDirty = true;
+    renderTopEditorControls();
+    renderEditorLeft();
+    renderEditorMain();
+  }
+
+  function removeActionFromEditor(action){
+    const s = state.editorDraft;
+    if(!s) return;
+    if(action === "Fold") return;
+
+    const parts = getActionCounts(s.actions);
+
+    let hasCall = parts.hasCall;
+    let hasJam  = parts.hasJam;
+    let nRaises = parts.nRaises;
+
+    if(action === "Call") hasCall = false;
+    else if(action === "Jam") hasJam = false;
+    else if(String(action).toLowerCase().startsWith("raise")){
+      // remove one raise size: drop count by 1
+      nRaises = Math.max(0, nRaises - 1);
+    }
+
+    rebuildScenarioActions(s, hasCall, nRaises, hasJam);
+
+    const newPal = {};
+    for(const a of s.actions) newPal[a] = (a === "Fold") ? 100 : 0;
+    state.palette = newPal;
+
+    state.editorDirty = true;
+    renderTopEditorControls();
+    renderEditorLeft();
+    renderEditorMain();
+  }
+
+  function renderEditorMain(){
+    mainTitle.textContent = "Editor";
+    const scen = state.editorDraft;
+    scenarioTag.textContent = scen ? scen.name : "—";
+    if(!scen){
+      mainBody.innerHTML = `<div class="muted">Pick a scenario to edit.</div>`;
+      window.onkeydown = null;
+      return;
+    }
+
+    mainBody.innerHTML = `
+      ${renderSelectionStripHTML({compact:false})}
+      <div class="hr"></div>
+      <div class="panel" style="background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:12px; height: calc(100vh - 56px - 14px - 14px - 70px - 120px);">
+        <div class="row" style="justify-content:space-between; align-items:center;">
+          <div class="row">
+            <span class="tag">Cells: <b>${state.selectedCells.size}</b></span>
+            <button class="btn small" id="btnClearSel">Clear</button>
+          </div>
+        </div>
+        <div class="hr"></div>
+        <div style="height: calc(100% - 52px);">
+          ${renderGridHTML(scen, null, {allowClickSelect:true, scenarioId: scen.id, small:false})}
+        </div>
+      </div>
+    `;
+
+    const grid = document.getElementById("grid");
+
+    const paintCell = (hand) => {
+      const s = state.editorDraft;
+      if(!s) return;
+      const actions = s.actions;
+      const pct = normalizePctMap(state.palette, actions);
+      s.grid[hand] = pct;
+      state.editorDirty = true;
+      state.selectedCells.add(hand);
+
+      const el = grid.querySelector(`[data-hand="${hand}"]`);
+      if(el){
+        el.style.backgroundImage = buildGradientForCell(pct, actions);
+      }
+      setSelection(s.id, hand);
+      renderTopEditorControls();
+    };
+
+    const clearSelection = () => {
+      state.selectedCells.clear();
+      toast("Cleared");
+      renderEditorMain();
+    };
+
+    byId("btnClearSel").addEventListener("click", clearSelection);
+
+    state.paintDown = false;
+    grid.addEventListener("mousedown", (e) => {
+      const cell = e.target.closest(".cell[data-hand]");
+      if(!cell) return;
+      state.paintDown = true;
+      paintCell(cell.getAttribute("data-hand"));
+      e.preventDefault();
+    });
+    grid.addEventListener("mousemove", (e) => {
+      if(!state.paintDown) return;
+      const cell = e.target.closest(".cell[data-hand]");
+      if(!cell) return;
+      paintCell(cell.getAttribute("data-hand"));
+    });
+    window.addEventListener("mouseup", () => state.paintDown = false);
+
+    window.onkeydown = (ev) => {
+      if(state.mode !== "editor") return;
+      const isSave = (ev.key.toLowerCase() === "s") && (ev.ctrlKey || ev.metaKey);
+      if(isSave){
+        ev.preventDefault();
+        saveEditorChanges();
+      }
+      if(ev.key === "Escape"){
+        clearSelection();
+      }
+    };
+
+    setTimeout(() => fitAllGrids(), 0);
+  }
+
+  /* =========================
+     Trainer
+  ========================= */
+  function computeSessionAvgPct(attempts){
+    if(!attempts.length) return 0;
+    return Math.round(attempts.reduce((a,x)=>a + (x.pts||0), 0) / attempts.length);
+  }
+
+  function buildSessionQueueFromPool(pool){
+    state.sessionQueue = [];
+    for(let i=0;i<state.sessionLen;i++){
+      const scen = pool[Math.floor(Math.random()*pool.length)];
+      const hand = randomHandLabel();
+      state.sessionQueue.push({scenarioId: scen.id, hand});
+    }
+    state.sessionActive = true;
+    state.currentIdx = 0;
+    state.attempts = [];
+    state.reveal = false;
+    state.lastTierClass = "";
+    state.lastUserAction = null;
+    state.trainerResults = null;
+
+    setCurrentHandFromQueue();
+  }
+
+  function startSession(){
+    const visible = getVisibleScenarios();
+    const selectedSet = getSelectedSet();
+    const pool = visible.filter(s => selectedSet.has(s.id));
+    if(pool.length === 0){
+      toast("Select at least one scenario");
+      return;
+    }
+    state.lastSessionConfig = {
+      format: state.format,
+      selectedIds: [...selectedSet],
+      sessionLen: state.sessionLen,
+      mode: "multi",
+    };
+    buildSessionQueueFromPool(pool);
+    syncModeUI();
+    toast("Started");
+  }
+
+  function startSessionForScenarioId(id){
+    const sc = getScenarioById(id);
+    if(!sc || sc.format !== state.format){
+      toast("Scenario not available");
+      return;
+    }
+    state.lastSessionConfig = {
+      format: state.format,
+      selectedIds: [id],
+      sessionLen: state.sessionLen,
+      mode: "single",
+      scenarioId: id,
+    };
+    buildSessionQueueFromPool([sc]);
+    syncModeUI();
+    toast("Started");
+  }
+
+  function stopSession(){
+    if(!state.sessionActive) return;
+    endSessionAndShowResults("Stopped");
+  }
+
+  function setCurrentHandFromQueue(){
+    const item = state.sessionQueue[state.currentIdx];
+    if(!item){
+      endSessionAndShowResults("Completed");
+      return;
+    }
+    const scenario = getScenarioById(item.scenarioId);
+    if(!scenario){
+      state.currentIdx++;
+      return setCurrentHandFromQueue();
+    }
+    const pctMap = scenario.grid[item.hand] || {};
+    const pick = pickSolverAction(pctMap, scenario.actions);
+
+    state.currentHand = {
+      scenario,
+      hand: item.hand,
+      rng: pick.rng,
+      solverChoice: pick.choice,
+      normalized: pick.normalized,
+      cards: handToTwoCards(item.hand),
+    };
+    state.reveal = false;
+    state.lastTierClass = "";
+    state.lastUserAction = null;
+
+    // selection defaults to this scenario (hand unset until click)
+    state.selection = { scenarioId: scenario.id, hand: null };
+
+    renderTrainerMain(); // update immediately
+  }
+
+  function handleUserAction(action){
+    const ch = state.currentHand;
+    if(!ch || state.reveal) return;
+
+    const scenario = ch.scenario;
+    const actual = scenario.actions.find(a => String(a).toLowerCase() === String(action).toLowerCase());
+    if(!actual){
+      toast("Action not available");
+      return;
+    }
+
+    const {tier, pts} = scoreAttempt(actual, ch.solverChoice, ch.normalized, scenario.actions);
+    state.attempts.push({
+      ts: nowISO(),
+      format: state.format,
+      scenarioId: scenario.id,
+      scenarioName: scenario.name,
+      hand: ch.hand,
+      rng: ch.rng,
+      solverChoice: ch.solverChoice,
+      userAction: actual,
+      tier,
+      pts,
+    });
+
+    state.lastUserAction = actual;
+    state.reveal = true;
+    state.lastTierClass = tier === "best" ? "good" : (tier==="correct" ? "warn" : "bad");
+
+    state.lastSessionScore = computeSessionAvgPct(state.attempts);
+    renderTrainerMain();
+  }
+
+  function nextOrResults(){
+    // called after reveal
+    const isLast = (state.currentIdx >= state.sessionQueue.length - 1);
+    if(isLast){
+      endSessionAndShowResults("Completed");
+      return;
+    }
+    state.currentIdx++;
+    setCurrentHandFromQueue();
+  }
+
+  function endSessionAndShowResults(status){
+    const attempts = state.attempts;
+    const avg = computeSessionAvgPct(attempts);
+    const best = attempts.filter(a=>a.tier==="best").length;
+    const corr = attempts.filter(a=>a.tier==="correct").length;
+    const wrong = attempts.filter(a=>a.tier==="wrong").length;
+
+    const report = {
+      id: crypto.randomUUID(),
+      status,
+      createdAt: nowISO(),
+      format: state.format,
+      sessionLen: state.sessionQueue.length,
+      selectedScenarioCount: getSelectedSet().size,
+      avgScore: avg,
+      breakdown: {best, correct:corr, wrong},
+      attempts: attempts.slice(0, 800),
+    };
+    addReport(report);
+
+    state.sessionActive = false;
+    state.sessionQueue = [];
+    state.currentIdx = 0;
+    state.currentHand = null;
+    state.reveal = false;
+
+    state.trainerResults = {
+      reportId: report.id,
+      reportObj: report,
+      config: state.lastSessionConfig,
+    };
+
+    syncModeUI();
+  }
+
+  function renderTrainerLeft(){
+    leftTitle.textContent = "Trainer";
+    leftBody.innerHTML = `
+      <div class="row" style="justify-content:space-between;">
+        <div class="pill"><span class="muted">Length</span> <b>${state.sessionLen}</b></div>
+        <input id="sessLen" type="range" min="5" max="60" step="1" value="${state.sessionLen}" />
       </div>
 
       <div class="hr"></div>
 
-      <div class="tiny muted">
-        Hotkeys: X=Fold, C=Call, Z=Jam, 1..9=Raise sizes (Jam is largest), Enter=Next (after reveal).
+      <div class="row" style="justify-content:space-between;">
+        <div class="toggle">
+          <input type="checkbox" id="toggleGrid" ${state.showGridAfterAnswer ? "checked":""} />
+          <label for="toggleGrid" class="tiny muted">Show grid after answer</label>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="row">
+        <button class="btn primary" id="btnStart">${state.sessionActive ? "Restart" : "Start"}</button>
+        <button class="btn" id="btnStop" ${state.sessionActive ? "" : "disabled"}>Stop</button>
       </div>
     `;
 
     leftBody.querySelector("#sessLen").addEventListener("input", (e)=>{
       state.sessionLen = Number(e.target.value);
+      saveUI();
       renderTrainerLeft();
+    });
+    leftBody.querySelector("#toggleGrid").addEventListener("change", (e)=>{
+      state.showGridAfterAnswer = !!e.target.checked;
+      saveUI();
+      renderTrainerMain();
     });
 
     leftBody.querySelector("#btnStart").addEventListener("click", startSession);
     leftBody.querySelector("#btnStop").addEventListener("click", stopSession);
   }
 
+  function renderTrainerResultsScreen(){
+    mainTitle.textContent = "Trainer";
+    const res = state.trainerResults;
+    const report = res?.reportObj;
+    scenarioTag.textContent = report ? `${report.status} · ${report.sessionLen} hands` : "—";
+
+    if(!report){
+      mainBody.innerHTML = `<div class="muted">No results.</div>`;
+      return;
+    }
+
+    const pct = report.avgScore;
+    const tier = scoreTier(pct);
+    const phrase = pickRandom(tier.phrases);
+
+    mainBody.innerHTML = `
+      <div class="bigResult">
+        <div class="pct">${pct}%</div>
+        <div class="title">${escapeHTML(phrase)}</div>
+        <div class="subtitle">${escapeHTML(tier.note)}</div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="row" style="justify-content:space-between;">
+        <div class="row">
+          <span class="tag">Best <b>${report.breakdown.best}</b></span>
+          <span class="tag">Correct <b>${report.breakdown.correct}</b></span>
+          <span class="tag">Wrong <b>${report.breakdown.wrong}</b></span>
+        </div>
+        <div class="row">
+          <button class="btn primary" id="btnRestart">Restart <span class="mono">(Enter)</span></button>
+          <button class="btn" id="btnViewReport">View details</button>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="split2">
+        <div class="stickyBox">
+          <div style="font-weight:950;">Mistakes</div>
+          <div class="tiny muted" style="margin-top:6px;">Click a row to preview.</div>
+          <div class="hr"></div>
+          ${renderMistakesTable(report)}
+        </div>
+        <div class="stickyBox" id="mistakePreview">
+          ${renderMistakePreview(report, null)}
+        </div>
+      </div>
+    `;
+
+    // interactions
+    byId("btnRestart").addEventListener("click", () => restartLastDrill());
+    byId("btnViewReport").addEventListener("click", () => {
+      state.mode = "reports";
+      state.reportSelectedId = report.id;
+      state.reportSelectedAttemptIdx = null;
+      syncModeUI();
+    });
+
+    // click mistake rows
+    mainBody.querySelectorAll("[data-mrow]").forEach(row => {
+      row.addEventListener("click", () => {
+        const idx = Number(row.getAttribute("data-mrow"));
+        const preview = byId("mistakePreview");
+        preview.innerHTML = renderMistakePreview(report, idx);
+        wireMiniPreviewClicks(preview, report, idx);
+      });
+    });
+
+    wireMiniPreviewClicks(mainBody, report, null);
+
+    // hotkey: Enter restarts
+    window.onkeydown = (ev) => {
+      if(ev.key === "Enter"){
+        ev.preventDefault();
+        restartLastDrill();
+      }
+    };
+
+    setTimeout(() => fitAllGrids(), 0);
+  }
+
+  function restartLastDrill(){
+    const cfg = state.lastSessionConfig;
+    if(!cfg){
+      toast("No previous drill");
+      return;
+    }
+    // ensure format matches
+    if(cfg.format !== state.format){
+      state.format = cfg.format;
+      saveUI();
+    }
+    // select same scenarios
+    setSelectedSet(new Set(cfg.selectedIds || []));
+    if(cfg.mode === "single" && cfg.scenarioId){
+      setBrowseScenarioId(cfg.scenarioId);
+      startSessionForScenarioId(cfg.scenarioId);
+    }else{
+      startSession();
+    }
+  }
+
+  function scoreTier(pct){
+    if(pct >= 100){
+      return {
+        note: "100%",
+        phrases: ["Perfect","Flawless victory","Jedi Master","White Magic Hero"]
+      };
+    }
+    if(pct >= 95){
+      return {
+        note: "95–99%",
+        phrases: ["Strong","Badass","Near Perfect","The Force is strong with this one."]
+      };
+    }
+    if(pct >= 90){
+      return { note: "90–94%", phrases: ["You are doin it!"] };
+    }
+    if(pct >= 80){
+      return { note: "80–89%", phrases: ["Not bad kid"] };
+    }
+    if(pct >= 70){
+      return { note: "70–79%", phrases: ["OK, keep pushing though"] };
+    }
+    if(pct >= 60){
+      return { note: "60–69%", phrases: ["Could do with work on this spot"] };
+    }
+    if(pct >= 40){
+      return { note: "40–59%", phrases: ["Do the drill more times, you'll get it"] };
+    }
+    return { note: "0–39%", phrases: ["Sorry man do this drill 10 times and learn what is going wrong!"] };
+  }
+  function pickRandom(arr){
+    if(!arr || !arr.length) return "";
+    return arr[Math.floor(Math.random()*arr.length)];
+  }
+
+  function renderMistakesTable(report){
+    const wrongs = (report.attempts||[]).map((a,i)=>({a,i})).filter(x => x.a.tier === "wrong");
+    if(!wrongs.length){
+      return `<div class="muted">No mistakes.</div>`;
+    }
+    const rows = wrongs.slice(0, 30).map(x => {
+      const a = x.a;
+      return `
+        <div class="row rowClick trBad" data-mrow="${x.i}"
+             style="padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.06); margin-bottom:8px;">
+          <span class="tag mono">${escapeHTML(a.hand)}</span>
+          <span class="tag">${escapeHTML(a.userAction)}</span>
+          <span class="tag" style="border-color:rgba(255,204,102,.25); color:var(--warn);">→ ${escapeHTML(a.solverChoice)}</span>
+          <span class="tag" style="max-width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHTML(a.scenarioName)}</span>
+        </div>
+      `;
+    }).join("");
+    return rows;
+  }
+
+  function renderMistakePreview(report, idx){
+    if(idx == null){
+      return `<div class="muted">Select a mistake to preview.</div>`;
+    }
+    const a = report.attempts[idx];
+    if(!a) return `<div class="muted">Not found.</div>`;
+    const scen = getScenarioById(a.scenarioId);
+    if(!scen){
+      return `
+        <div>
+          <div class="row">
+            <span class="tag mono">${escapeHTML(a.hand)}</span>
+            <span class="tag">${escapeHTML(a.userAction)}</span>
+            <span class="tag" style="border-color:rgba(255,204,102,.25); color:var(--warn);">→ ${escapeHTML(a.solverChoice)}</span>
+          </div>
+          <div class="hr"></div>
+          <div class="muted">Scenario not found (maybe deleted).</div>
+        </div>
+      `;
+    }
+    // set selection for percent strip
+    state.selection = { scenarioId: scen.id, hand: a.hand };
+    return `
+      <div>
+        <div class="row" style="justify-content:space-between;">
+          <div class="row">
+            <span class="tag mono">${escapeHTML(a.hand)}</span>
+            <span class="tag">${escapeHTML(a.userAction)}</span>
+            <span class="tag" style="border-color:rgba(255,204,102,.25); color:var(--warn);">→ ${escapeHTML(a.solverChoice)}</span>
+          </div>
+          <span class="tag">${escapeHTML(scen.name)}</span>
+        </div>
+        <div class="hr"></div>
+        ${renderSelectionStripHTML({compact:false})}
+        <div class="hr"></div>
+        <div style="height:320px;">
+          ${renderGridHTML(scen, a.hand, {allowClickSelect:true, scenarioId: scen.id, small:true})}
+        </div>
+      </div>
+    `;
+  }
+
+  function wireMiniPreviewClicks(containerEl, report, idx){
+    // Click mini-grid cells in preview to update selection strip
+    containerEl.querySelectorAll(".cell[data-clickselect='1']").forEach(cell => {
+      cell.addEventListener("click", () => {
+        const sid = cell.getAttribute("data-sid");
+        const hand = cell.getAttribute("data-hand");
+        setSelection(sid, hand);
+      });
+    });
+  }
+
   function renderTrainerMain(){
     mainTitle.textContent = "Trainer";
+
+    // If results screen active
+    if(state.mode === "trainer" && state.trainerResults){
+      renderTrainerResultsScreen();
+      return;
+    }
+
     const browseId = getBrowseScenarioId();
     const browseScen = browseId ? getScenarioById(browseId) : null;
     scenarioTag.textContent = browseScen ? browseScen.name : "—";
 
+    // Browse mode (session inactive)
     if(!state.sessionActive){
-      // Browse mode: show grid for selected scenario (outside edit mode) + inspector
       if(!browseScen){
-        mainBody.innerHTML = `
-          ${renderInspectorHTML()}
-          <div class="hr"></div>
-          <div class="muted">No scenarios in ${state.format}. Go to Library → Import JSON or create a new scenario.</div>
-        `;
+        mainBody.innerHTML = `<div class="muted">No scenarios in ${state.format}. Import JSON (Library) or create one.</div>`;
         window.onkeydown = null;
         return;
       }
 
+      // Selection strip + grid browse
+      state.selection.scenarioId = browseScen.id;
+
       mainBody.innerHTML = `
-        ${renderInspectorHTML()}
+        ${renderSelectionStripHTML({compact:false})}
         <div class="hr"></div>
         <div class="panel" style="background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:12px; height: calc(100vh - 56px - 14px - 14px - 70px - 120px);">
-          <div class="row" style="justify-content:space-between; align-items:center;">
-            <div>
-              <div style="font-weight:900;">Browse grid (not training)</div>
-              <div class="tiny muted">Click a cell to see action % in the inspector.</div>
-            </div>
-            <div class="row">
-              <span class="tag">Actions: <b>${escapeHTML((browseScen.actions||[]).join(", "))}</b></span>
-            </div>
-          </div>
-          <div class="hr"></div>
-          <div style="height: calc(100% - 52px);">
-            ${renderGridHTML(browseScen, null, false, { allowClickInspect:true, scenarioId:browseScen.id })}
+          <div style="height:100%;">
+            ${renderGridHTML(browseScen, null, {allowClickSelect:true, scenarioId:browseScen.id, small:false})}
           </div>
         </div>
       `;
+
       window.onkeydown = null;
       setTimeout(() => fitAllGrids(), 0);
       return;
@@ -1607,29 +2309,37 @@
 
     const ch = state.currentHand;
     if(!ch){
-      mainBody.innerHTML = `<div class="muted">Loading hand...</div>`;
+      mainBody.innerHTML = `<div class="muted">Loading...</div>`;
       return;
     }
 
     const {scenario, hand, rng, solverChoice, normalized, cards} = ch;
     scenarioTag.textContent = scenario.name;
 
-    const gridPanelHeight = "calc(100vh - 56px - 14px - 14px - 140px)";
-
-    const hasCall = scenario.actions.some(a=>a.toLowerCase()==="call");
-    const raiseActions = sortRaisesSmallToLarge(scenario.actions.filter(a=>a.toLowerCase().startsWith("raise")));
-    const hasJam = scenario.actions.some(a=>a.toLowerCase()==="jam");
+    const hasCall = scenario.actions.some(a=>String(a).toLowerCase()==="call");
+    const raiseActions = sortRaisesSmallToLarge(scenario.actions.filter(a=>String(a).toLowerCase().startsWith("raise")));
+    const hasJam = scenario.actions.some(a=>String(a).toLowerCase()==="jam");
 
     const numbered = numberedAggroActions(scenario);
     const keyForAction = (act) => {
-      const idx = numbered.findIndex(x => x.toLowerCase() === act.toLowerCase());
+      const idx = numbered.findIndex(x => String(x).toLowerCase() === String(act).toLowerCase());
       return idx >= 0 ? String(idx+1) : "";
     };
 
-    mainBody.innerHTML = `
-      ${renderInspectorHTML()}
-      <div class="hr"></div>
+    const scoreSoFar = computeSessionAvgPct(state.attempts);
+    const scoreLabel = state.attempts.length ? `${scoreSoFar}%` : "—";
 
+    const isLast = (state.currentIdx >= state.sessionQueue.length - 1);
+    const nextLabel = isLast ? `See results` : `Next hand`;
+    const nextHotkey = "Enter";
+
+    // Right grid panel: only show after reveal and toggle is on
+    const showGrid = (state.reveal && state.showGridAfterAnswer);
+
+    // set selection owner
+    state.selection.scenarioId = scenario.id;
+
+    mainBody.innerHTML = `
       <div class="row" style="justify-content:space-between; align-items:stretch; gap:14px;">
         <div class="col" style="gap:10px; flex:1; min-width:520px;">
           <div class="scenarioName">${escapeHTML(scenario.name)}</div>
@@ -1642,6 +2352,14 @@
           </div>
 
           <div class="rngBanner">RNG: ${rng}</div>
+
+          <div class="scoreBanner">
+            <div>
+              <div class="sub">Session score</div>
+              <div class="big">${scoreLabel}</div>
+            </div>
+            <div class="sub">${state.attempts.length} / ${state.sessionQueue.length} played</div>
+          </div>
 
           <div class="panel" style="background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:12px;">
             <div class="actionBar" id="actionBar">
@@ -1667,13 +2385,12 @@
 
             <div id="revealBlock" style="display:${state.reveal ? "block":"none"};">
               <div class="row" style="justify-content:space-between; align-items:center;">
-                <div>
-                  <div style="font-weight:900; font-size:16px;">Solution</div>
-                  <div class="tiny muted">RNG selected: <span class="mono">${escapeHTML(solverChoice)}</span></div>
+                <div class="row">
+                  <span class="tag" style="border-color:rgba(255,204,102,.25); color:var(--warn);">RNG: <b class="mono">${escapeHTML(solverChoice)}</b></span>
                 </div>
                 <div class="row">
                   <span class="badge ${state.lastTierClass || ""}" id="lastScoreBadge" style="font-size:16px;padding:10px 14px;font-weight:900;border-radius:999px;">—</span>
-                  <button class="btn primary" id="btnNext">Next hand <span class="mono">(Enter)</span></button>
+                  <button class="btn primary" id="btnNext">${nextLabel} <span class="mono">(${nextHotkey})</span></button>
                 </div>
               </div>
               <div class="hr"></div>
@@ -1687,19 +2404,27 @@
           </div>
         </div>
 
-        <div class="panel" style="flex:0 0 680px; max-width:45vw; min-width:560px; background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:12px; height:${gridPanelHeight};">
+        <div class="panel" style="flex:0 0 680px; max-width:45vw; min-width:560px; background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:12px; height: calc(100vh - 56px - 14px - 14px - 96px);">
           <div class="row" style="justify-content:space-between; align-items:center;">
-            <div>
-              <div style="font-weight:900;">Range grid</div>
-              <div class="tiny muted">${state.reveal ? "Click cells to inspect." : "Hidden until you act."}</div>
+            <div class="row">
+              <span class="tag">Selected</span>
+              <span class="tag mono">${escapeHTML(state.selection.hand || "—")}</span>
             </div>
-            <div class="pill"><span class="muted">Format</span> <b>${escapeHTML(state.format)}</b></div>
+            <div class="row">
+              ${state.selection.hand ? `<span class="tag">${escapeHTML(state.selection.hand)}</span>` : ``}
+            </div>
           </div>
           <div class="hr"></div>
           <div style="height: calc(100% - 52px);">
-            ${state.reveal
-              ? renderGridHTML(scenario, hand, false, { allowClickInspect:true, scenarioId: scenario.id })
-              : `<div class="muted">Make a decision to reveal the grid.</div>`
+            ${showGrid
+              ? `
+                ${renderSelectionStripHTML({compact:false})}
+                <div class="hr"></div>
+                <div style="height: calc(100% - 120px);">
+                  ${renderGridHTML(scenario, hand, {allowClickSelect:true, scenarioId: scenario.id, small:false})}
+                </div>
+              `
+              : `<div class="muted">${state.reveal ? "Grid hidden." : "Answer to reveal."}</div>`
             }
           </div>
         </div>
@@ -1707,20 +2432,43 @@
     `;
 
     const actionBar = document.getElementById("actionBar");
-    actionBar.querySelectorAll("[data-act]").forEach(btn => {
+    const buttons = Array.from(actionBar.querySelectorAll("[data-act]"));
+    buttons.forEach(btn => {
       btn.addEventListener("click", () => handleUserAction(btn.getAttribute("data-act")));
+      btn.disabled = state.reveal; // lock after answer
     });
 
+    // highlight user / solver on reveal
     if(state.reveal){
-      document.getElementById("btnNext").addEventListener("click", nextHand);
+      const user = state.lastUserAction;
+      const solver = solverChoice;
+
+      const userBtn = buttons.find(b => String(b.getAttribute("data-act")).toLowerCase() === String(user).toLowerCase());
+      const solverBtn = buttons.find(b => String(b.getAttribute("data-act")).toLowerCase() === String(solver).toLowerCase());
+      if(userBtn){
+        userBtn.classList.add(state.lastTierClass === "bad" ? "hlWrong" : "hlCorrect");
+      }
+      if(solverBtn){
+        solverBtn.classList.add("hlSolver");
+      }
+
+      const badge = byId("lastScoreBadge");
+      if(badge){
+        const tier = state.attempts[state.attempts.length-1]?.tier;
+        badge.className = `badge ${state.lastTierClass}`;
+        badge.textContent = tier === "best" ? `BEST · 100` : (tier==="correct" ? `CORRECT · 70` : `WRONG · 0`);
+      }
+
+      byId("btnNext").addEventListener("click", nextOrResults);
     }
 
+    // hotkeys
     window.onkeydown = (ev) => {
       if(!state.sessionActive) return;
 
       if(state.reveal && ev.key === "Enter"){
         ev.preventDefault();
-        return nextHand();
+        return nextOrResults();
       }
       if(state.reveal) return;
 
@@ -1736,466 +2484,23 @@
       }
     };
 
-    setTimeout(() => fitAllGrids(), 0);
-  }
-
-  function startSession(){
-    const visible = getVisibleScenarios();
-    const selectedSet = getSelectedSet();
-    const pool = visible.filter(s => selectedSet.has(s.id));
-    if(pool.length === 0){
-      toast("Select at least one scenario");
-      return;
-    }
-    buildSessionFromPool(pool);
-    syncModeUI();
-    toast("Session started");
-  }
-
-  function startSessionForScenarioId(id){
-    const sc = getScenarioById(id);
-    if(!sc || sc.format !== state.format){
-      toast("Scenario not available in this format");
-      return;
-    }
-    buildSessionFromPool([sc]);
-    syncModeUI();
-    toast("Session started (single scenario)");
-  }
-
-  function buildSessionFromPool(pool){
-    state.sessionQueue = [];
-    for(let i=0;i<state.sessionLen;i++){
-      const scen = pool[Math.floor(Math.random()*pool.length)];
-      const hand = randomHandLabel();
-      state.sessionQueue.push({scenarioId: scen.id, hand});
-    }
-    state.sessionActive = true;
-    state.currentIdx = 0;
-    state.attempts = [];
-    state.reveal = false;
-    setCurrentHandFromQueue();
-  }
-
-  function stopSession(){
-    if(!state.sessionActive) return;
-    endSessionAndReport("Stopped");
-  }
-
-  function setCurrentHandFromQueue(){
-    const item = state.sessionQueue[state.currentIdx];
-    if(!item){
-      endSessionAndReport("Completed");
-      return;
-    }
-    const scenario = getScenarioById(item.scenarioId);
-    if(!scenario){
-      state.currentIdx++;
-      return setCurrentHandFromQueue();
-    }
-    const pctMap = scenario.grid[item.hand] || {};
-    const pick = pickSolverAction(pctMap, scenario.actions);
-    state.currentHand = {
-      scenario,
-      hand: item.hand,
-      rng: pick.rng,
-      solverChoice: pick.choice,
-      normalized: pick.normalized,
-      cards: handToTwoCards(item.hand),
-    };
-    state.reveal = false;
-    state.lastTierClass = "";
-    updateSessStat();
-
-    // Ensure inspector targets current scenario (hand unset until click)
-    state.inspect = { scenarioId: scenario.id, hand: null };
-  }
-
-  function updateSessStat(){
-    if(!state.sessionActive){
-      sessStat.textContent = "—";
-      return;
-    }
-    const avg = state.attempts.length ? Math.round(state.attempts.reduce((a,x)=>a+x.pts,0)/state.attempts.length) : 0;
-    sessStat.textContent = `${state.currentIdx+1}/${state.sessionQueue.length} · Score ${avg}%`;
-  }
-
-  function handleUserAction(action){
-    const ch = state.currentHand;
-    if(!ch || state.reveal) return;
-
-    const scenario = ch.scenario;
-    const actual = scenario.actions.find(a => a.toLowerCase() === String(action).toLowerCase());
-    if(!actual){
-      toast("Action not available in this scenario");
-      return;
-    }
-
-    const {tier, pts} = scoreAttempt(actual, ch.solverChoice, ch.normalized, scenario.actions);
-    state.attempts.push({
-      ts: nowISO(),
-      scenarioId: scenario.id,
-      scenarioName: scenario.name,
-      hand: ch.hand,
-      rng: ch.rng,
-      solverChoice: ch.solverChoice,
-      userAction: actual,
-      tier,
-      pts,
-      format: state.format,
-    });
-
-    state.reveal = true;
-    state.lastTierClass = tier === "best" ? "good" : (tier==="correct" ? "warn" : "bad");
-    renderTrainerMain();
-
-    const badge = document.getElementById("lastScoreBadge");
-    if(badge){
-      badge.className = `badge ${state.lastTierClass}`;
-      badge.textContent = tier === "best" ? `BEST · 100` : (tier==="correct" ? `CORRECT · 70` : `WRONG · 0`);
-    }
-
-    updateSessStat();
-  }
-
-  function nextHand(){
-    state.currentIdx++;
-    if(state.currentIdx >= state.sessionQueue.length){
-      endSessionAndReport("Completed");
-      return;
-    }
-    setCurrentHandFromQueue();
-    renderTrainerMain();
-  }
-
-  function endSessionAndReport(status){
-    const attempts = state.attempts;
-    const avg = attempts.length ? (attempts.reduce((a,x)=>a+x.pts,0)/attempts.length) : 0;
-    const best = attempts.filter(a=>a.tier==="best").length;
-    const corr = attempts.filter(a=>a.tier==="correct").length;
-    const wrong = attempts.filter(a=>a.tier==="wrong").length;
-
-    addReport({
-      id: crypto.randomUUID(),
-      status,
-      createdAt: nowISO(),
-      format: state.format,
-      sessionLen: state.sessionQueue.length,
-      selectedScenarioCount: getSelectedSet().size,
-      avgScore: Math.round(avg),
-      breakdown: {best, correct:corr, wrong},
-      attempts: attempts.slice(0, 500),
-    });
-
-    state.sessionActive = false;
-    state.sessionQueue = [];
-    state.currentIdx = 0;
-    state.currentHand = null;
-    state.reveal = false;
-
-    syncModeUI();
-    toast(`Session ${status}. Avg ${Math.round(avg)}%`);
-  }
-
-  // Grid renderer
-  function renderGridHTML(scenario, highlightHand, selectable, opts){
-    const actions = scenario.actions;
-    const allowClickInspect = !!(opts && opts.allowClickInspect);
-    const sid = opts && opts.scenarioId ? opts.scenarioId : scenario.id;
-
-    const cells = [];
-    for(let r=0;r<13;r++){
-      for(let c=0;c<13;c++){
-        const hand = labelFromRC(r,c);
-        const pctMap = scenario.grid[hand] || {};
-        const grad = buildGradientForCell(pctMap, actions);
-        const isHL = hand === highlightHand;
-        const isSel = state.selectedCells.has(hand);
-        const cls = `cell ${isSel ? "sel":""}`;
-        const hint = selectable ? `<div class="hint">paint</div>` : `<div class="hint">${isHL ? "you":""}</div>`;
-        cells.push(`
-          <div class="${cls}" data-hand="${hand}" data-sid="${sid}"
-               style="background-image:${grad}; ${isHL ? "outline:2px solid rgba(255,204,102,.9); outline-offset:-2px;" : ""}">
-            <div class="lbl mono">${hand}</div>
-            ${hint}
-          </div>
-        `);
-      }
-    }
-    const legend = `
-      <div class="legend">
-        ${actions.map(a => `<span><span class="sw" style="background:${actionColor(a)}"></span>${escapeHTML(a)}</span>`).join("")}
-      </div>
-    `;
-    // attach click handler after render in parent (we do it by event delegation below)
-    const clickHint = allowClickInspect ? `<div class="tiny muted">Tip: click a cell to inspect action %</div>` : ``;
-
-    return `
-      <div class="gridWrap" data-gridwrap="1" data-allowinspect="${allowClickInspect ? "1":"0"}">
-        ${legend}
-        ${clickHint}
-        <div class="grid" id="grid">${cells.join("")}</div>
-      </div>
-    `;
-  }
-
-  // Editor
-  function openEditor(id){
-    const scen = getScenarioById(id);
-    if(!scen){ toast("Scenario not found"); return; }
-
-    state.mode = "editor";
-    state.editorScenarioId = id;
-    state.editorDraft = JSON.parse(JSON.stringify(scen));
-    state.editorDirty = false;
-    state.selectedCells.clear();
-
-    state.palette = {};
-    for(const a of state.editorDraft.actions){
-      state.palette[a] = (a === "Fold") ? 100 : 0;
-    }
-    state.inspect = { scenarioId: id, hand: null };
-    syncModeUI();
-    toast("Editor opened (no autosave)");
-  }
-
-  function closeEditor(){
-    state.editorScenarioId = null;
-    state.editorDraft = null;
-    state.editorDirty = false;
-    state.selectedCells.clear();
-  }
-
-  function saveEditorChanges(){
-    if(!state.editorDraft) return;
-    const idx = state.scenariosAll.findIndex(s => s.id === state.editorDraft.id);
-    if(idx >= 0){
-      state.editorDraft.updatedAt = nowISO();
-      // keep format field
-      state.editorDraft.format = state.editorDraft.format || state.format;
-      state.editorDraft.tags = state.editorDraft.tags || {};
-      state.editorDraft.tags.format = state.editorDraft.format;
-      state.scenariosAll[idx] = state.editorDraft;
-      saveScenarios();
-      state.editorDirty = false;
-      toast("Saved");
-      renderScenarioList();
-      renderEditorLeft();
-      renderTopEditorControls();
-    }
-  }
-  function discardEditorChanges(){
-    if(!state.editorDraft) return;
-    const ok = confirm("Discard unsaved changes?");
-    if(!ok) return;
-    const original = getScenarioById(state.editorScenarioId);
-    if(!original) return;
-    state.editorDraft = JSON.parse(JSON.stringify(original));
-    state.editorDirty = false;
-    state.selectedCells.clear();
-    toast("Discarded");
-    renderEditorLeft();
-    renderEditorMain();
-    renderTopEditorControls();
-  }
-
-  function renderEditorLeft(){
-    leftTitle.textContent = "Editor";
-    const scen = state.editorDraft;
-    if(!scen){
-      leftBody.innerHTML = `<div class="muted">Pick a scenario to edit from the list above.</div>`;
-      return;
-    }
-
-    const actions = scen.actions;
-
-    leftBody.innerHTML = `
-      <div class="row" style="justify-content:space-between;">
-        <span class="badge ${state.editorDirty ? "warn":""}">${state.editorDirty ? "Unsaved changes" : "Saved"}</span>
-        <span class="tag">Format: <b>${escapeHTML(scen.format || state.format)}</b></span>
-      </div>
-
-      <div class="hr"></div>
-
-      <div class="col">
-        <div style="font-weight:900;">Scenario name</div>
-        <input class="textInput" id="scenNameInput" value="${escapeHTML(scen.name)}" />
-        <div class="tiny muted">Changes only persist after Save (Ctrl/⌘+S).</div>
-      </div>
-
-      <div class="hr"></div>
-
-      <div class="col">
-        <div style="font-weight:900;">Paint palette</div>
-        <div class="tiny muted">Drag over cells to paint these action frequencies. Sliders normalize to 100.</div>
-      </div>
-
-      <div class="hr"></div>
-
-      <div class="col" id="paletteArea"></div>
-
-      <div class="hr"></div>
-
-      <div class="row">
-        <button class="btn primary" id="btnSave" ${state.editorDirty ? "" : "disabled"}>Save (Ctrl/⌘+S)</button>
-        <button class="btn" id="btnDiscard" ${state.editorDirty ? "" : "disabled"}>Discard</button>
-        <button class="btn" id="btnExportDraft">Export JSON</button>
-      </div>
-
-      <div class="hr"></div>
-
-      <div class="tiny muted">Tip: click-drag paints. Press Esc to clear selection.</div>
-    `;
-
-    const nameInput = leftBody.querySelector("#scenNameInput");
-    nameInput.addEventListener("input", () => {
-      state.editorDraft.name = nameInput.value;
-      state.editorDirty = true;
-      renderTopEditorControls();
-      renderEditorLeft(); // enable save
-      renderScenarioList();
-    });
-
-    const pal = leftBody.querySelector("#paletteArea");
-    pal.innerHTML = actions.map(a => {
-      const v = Math.round((state.palette[a] ?? 0));
-      return `
-        <div class="row" style="justify-content:space-between; gap:10px;">
-          <span class="tag" style="min-width:120px;"><span class="sw" style="background:${actionColor(a)}"></span>${escapeHTML(a)}</span>
-          <input type="range" min="0" max="100" step="1" value="${v}" data-act="${escapeHTML(a)}" style="flex:1" />
-          <span class="pill mono" style="min-width:56px; justify-content:center;"><b>${v}%</b></span>
-          <button class="btn small" data-100="${escapeHTML(a)}">100%</button>
-        </div>
-      `;
-    }).join("");
-
-    pal.querySelectorAll('input[type="range"][data-act]').forEach(r => {
-      r.addEventListener("input", () => {
-        const a = r.getAttribute("data-act");
-        state.palette[a] = Number(r.value);
-        state.palette = normalizePctMap(state.palette, actions);
-        state.editorDirty = true;
-        renderTopEditorControls();
-        renderEditorLeft();
-        renderEditorMain();
+    // bind grid click to selection if shown
+    if(showGrid){
+      mainBody.querySelectorAll(".cell[data-clickselect='1']").forEach(cell => {
+        cell.addEventListener("click", () => {
+          const sid = cell.getAttribute("data-sid");
+          const h = cell.getAttribute("data-hand");
+          setSelection(sid, h);
+        });
       });
-    });
-    pal.querySelectorAll('button[data-100]').forEach(b => {
-      b.addEventListener("click", () => {
-        const a = b.getAttribute("data-100");
-        for(const x of actions) state.palette[x] = 0;
-        state.palette[a] = 100;
-        state.editorDirty = true;
-        renderTopEditorControls();
-        renderEditorLeft();
-        renderEditorMain();
-      });
-    });
-
-    leftBody.querySelector("#btnSave").addEventListener("click", saveEditorChanges);
-    leftBody.querySelector("#btnDiscard").addEventListener("click", discardEditorChanges);
-
-    leftBody.querySelector("#btnExportDraft").addEventListener("click", () => {
-      if(!state.editorDraft) return;
-      downloadJSON(state.editorDraft, safeName(state.editorDraft.name) + ".json");
-    });
-  }
-
-  function renderEditorMain(){
-    mainTitle.textContent = "Editor";
-    const scen = state.editorDraft;
-    scenarioTag.textContent = scen ? scen.name : "—";
-
-    if(!scen){
-      mainBody.innerHTML = `<div class="muted">Pick a scenario to edit from the list above.</div>`;
-      window.onkeydown = null;
-      return;
     }
-
-    mainBody.innerHTML = `
-      ${renderInspectorHTML()}
-      <div class="hr"></div>
-      <div class="panel" style="background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:12px; height: calc(100vh - 56px - 14px - 14px - 70px - 120px);">
-        <div class="row" style="justify-content:space-between; align-items:center;">
-          <div>
-            <div style="font-weight:900;">Paint the grid</div>
-            <div class="tiny muted">No autosave. Save when you’re done.</div>
-          </div>
-          <div class="row">
-            <span class="tag">Selected cells: <b>${state.selectedCells.size}</b></span>
-            <button class="btn small" id="btnClearSel">Clear selection</button>
-          </div>
-        </div>
-        <div class="hr"></div>
-        <div style="height: calc(100% - 52px);">
-          ${renderGridHTML(scen, null, true, { allowClickInspect:true, scenarioId: scen.id })}
-        </div>
-      </div>
-    `;
-
-    const grid = document.getElementById("grid");
-
-    const paintCell = (hand) => {
-      const s = state.editorDraft;
-      if(!s) return;
-      const actions = s.actions;
-      const pct = normalizePctMap(state.palette, actions);
-      s.grid[hand] = pct;
-      state.editorDirty = true;
-      state.selectedCells.add(hand);
-      const el = grid.querySelector(`[data-hand="${hand}"]`);
-      if(el){
-        el.style.backgroundImage = buildGradientForCell(pct, actions);
-        el.classList.add("sel");
-      }
-      // also update inspector
-      setInspector(s.id, hand);
-      renderTopEditorControls();
-    };
-
-    const clearSelection = () => {
-      state.selectedCells.clear();
-      grid.querySelectorAll(".cell.sel").forEach(c => c.classList.remove("sel"));
-      toast("Selection cleared");
-    };
-
-    document.getElementById("btnClearSel").addEventListener("click", clearSelection);
-
-    state.paintDown = false;
-    grid.addEventListener("mousedown", (e) => {
-      const cell = e.target.closest(".cell[data-hand]");
-      if(!cell) return;
-      state.paintDown = true;
-      paintCell(cell.getAttribute("data-hand"));
-      e.preventDefault();
-    });
-    grid.addEventListener("mousemove", (e) => {
-      if(!state.paintDown) return;
-      const cell = e.target.closest(".cell[data-hand]");
-      if(!cell) return;
-      paintCell(cell.getAttribute("data-hand"));
-    });
-    window.addEventListener("mouseup", () => state.paintDown = false);
-
-    window.onkeydown = (ev) => {
-      if(state.mode !== "editor") return;
-
-      if(ev.key === "Escape"){
-        clearSelection();
-        return;
-      }
-      const isSave = (ev.key.toLowerCase() === "s") && (ev.ctrlKey || ev.metaKey);
-      if(isSave){
-        ev.preventDefault();
-        saveEditorChanges();
-        return;
-      }
-    };
 
     setTimeout(() => fitAllGrids(), 0);
   }
 
-  // Library mode
+  /* =========================
+     Library
+  ========================= */
   function renderLibraryLeft(){
     leftTitle.textContent = "Library";
     leftBody.innerHTML = `
@@ -2203,13 +2508,9 @@
         <div class="pill"><span class="muted">Scenarios</span> <b>${getVisibleScenarios().length}</b></div>
         <div class="row">
           <button class="btn small" id="btnNewScenario">New</button>
-          <button class="btn small" id="btnExport">Export selected</button>
-          <button class="btn small danger" id="btnDelete">Delete selected</button>
+          <button class="btn small" id="btnExport">Export</button>
+          <button class="btn small danger" id="btnDelete">Delete</button>
         </div>
-      </div>
-      <div class="hr"></div>
-      <div class="tiny muted">
-        Import JSON is at the top of the scenario list (this tab). Imported scenarios are assigned to <b>${state.format}</b>.
       </div>
     `;
     leftBody.querySelector("#btnNewScenario").addEventListener("click", () => createNewScenario(true));
@@ -2224,93 +2525,412 @@
     scenarioTag.textContent = browseScen ? browseScen.name : "—";
 
     if(!browseScen){
-      mainBody.innerHTML = `
-        ${renderInspectorHTML()}
-        <div class="hr"></div>
-        <div class="muted">No scenarios in ${state.format}. Import JSON or create a new one.</div>
-      `;
+      mainBody.innerHTML = `<div class="muted">No scenarios in ${state.format}.</div>`;
       window.onkeydown = null;
       return;
     }
+    state.selection.scenarioId = browseScen.id;
 
     mainBody.innerHTML = `
-      ${renderInspectorHTML()}
+      ${renderSelectionStripHTML({compact:false})}
       <div class="hr"></div>
       <div class="panel" style="background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:12px; height: calc(100vh - 56px - 14px - 14px - 70px - 120px);">
-        <div class="row" style="justify-content:space-between; align-items:center;">
-          <div>
-            <div style="font-weight:900;">Browse solution</div>
-            <div class="tiny muted">Click a cell to see action % in the inspector.</div>
-          </div>
+        <div class="row" style="justify-content:space-between;">
           <div class="row">
-            <span class="tag">Actions: <b>${escapeHTML((browseScen.actions||[]).join(", "))}</b></span>
             <button class="btn small" id="btnEditBrowse">Edit</button>
           </div>
         </div>
         <div class="hr"></div>
         <div style="height: calc(100% - 52px);">
-          ${renderGridHTML(browseScen, null, false, { allowClickInspect:true, scenarioId:browseScen.id })}
+          ${renderGridHTML(browseScen, null, {allowClickSelect:true, scenarioId:browseScen.id, small:false})}
         </div>
       </div>
     `;
 
     byId("btnEditBrowse").addEventListener("click", () => openEditor(browseScen.id));
+
+    // selection clicks
+    mainBody.querySelectorAll(".cell[data-clickselect='1']").forEach(cell => {
+      cell.addEventListener("click", () => {
+        const sid = cell.getAttribute("data-sid");
+        const h = cell.getAttribute("data-hand");
+        setSelection(sid, h);
+      });
+    });
+
     window.onkeydown = null;
     setTimeout(() => fitAllGrids(), 0);
   }
 
-  // Reports
+  /* =========================
+     Reports (full session data + sorting + mini grid)
+  ========================= */
   function renderReportsLeft(){
     leftTitle.textContent = "Reports";
     const reps = loadReports().filter(r => (r.format || "MTT") === state.format);
+
     leftBody.innerHTML = `
       <div class="row" style="justify-content:space-between;">
-        <div class="pill"><span class="muted">Saved sessions</span> <b>${reps.length}</b></div>
-        <button class="btn small danger" id="btnClearReports">Clear ${state.format}</button>
+        <div class="pill"><span class="muted">Sessions</span> <b>${reps.length}</b></div>
+        <button class="btn small danger" id="btnClearReports">Clear</button>
       </div>
       <div class="hr"></div>
       <div class="reportList" id="reportList"></div>
-      <div class="hr"></div>
-      <div class="tiny muted">Reports are stored locally (filtered by format).</div>
     `;
+
     const list = leftBody.querySelector("#reportList");
-    list.innerHTML = reps.slice(0, 30).map(r => {
-      const b = r.breakdown || {best:0,correct:0,wrong:0};
+    list.innerHTML = reps.slice(0, 60).map(r => {
+      const active = (state.reportSelectedId === r.id);
+      const cls = `reportCard ${active ? "active":""}`;
       return `
-        <div class="report">
+        <div class="${cls}" data-rid="${escapeHTML(r.id)}">
           <div class="row" style="justify-content:space-between;">
             <b>${escapeHTML(r.status || "")}</b>
             <span class="badge ${r.avgScore >= 80 ? "good" : (r.avgScore >= 60 ? "warn" : "bad")}">${r.avgScore}%</span>
           </div>
           <div class="tiny muted">${new Date(r.createdAt).toLocaleString()} · ${r.sessionLen} hands</div>
-          <div class="tiny muted">Best ${b.best} · Correct ${b.correct} · Wrong ${b.wrong}</div>
+          <div class="tiny muted">Best ${r.breakdown?.best||0} · Correct ${r.breakdown?.correct||0} · Wrong ${r.breakdown?.wrong||0}</div>
         </div>
       `;
-    }).join("") || `<div class="muted">No reports yet for ${state.format}.</div>`;
+    }).join("") || `<div class="muted">No sessions yet.</div>`;
+
+    list.querySelectorAll("[data-rid]").forEach(card => {
+      card.addEventListener("click", () => {
+        state.reportSelectedId = card.getAttribute("data-rid");
+        state.reportSelectedAttemptIdx = null;
+        renderReportsLeft();
+        renderReportsMain();
+      });
+    });
 
     leftBody.querySelector("#btnClearReports").addEventListener("click", () => {
       if(!confirm(`Delete all ${state.format} reports from this browser?`)) return;
       const all = loadReports();
       const keep = all.filter(r => (r.format || "MTT") !== state.format);
-      saveJSON(LS_REP, keep);
-      toast("Reports cleared");
-      syncModeUI();
+      saveReports(keep);
+      state.reportSelectedId = null;
+      toast("Cleared");
+      renderReportsLeft();
+      renderReportsMain();
     });
   }
 
   function renderReportsMain(){
     mainTitle.textContent = "Reports";
-    scenarioTag.textContent = `Session history (${state.format})`;
+    scenarioTag.textContent = `Format: ${state.format}`;
+
+    const reps = loadReports().filter(r => (r.format || "MTT") === state.format);
+    const selected = state.reportSelectedId ? reps.find(r => r.id === state.reportSelectedId) : reps[0];
+    if(selected && !state.reportSelectedId) state.reportSelectedId = selected.id;
+
+    if(!selected){
+      mainBody.innerHTML = `<div class="muted">No reports.</div>`;
+      window.onkeydown = null;
+      return;
+    }
+
+    const attempts = selected.attempts || [];
+    const avg = selected.avgScore || 0;
+
     mainBody.innerHTML = `
-      <div class="panel" style="background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:14px;">
-        <h2 style="margin:0 0 8px; font-size:18px;">Session reports</h2>
-        <div class="muted">Switch format in the top bar to see the other mode’s reports.</div>
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <div class="row">
+          <span class="tag">${escapeHTML(selected.status)}</span>
+          <span class="tag">${new Date(selected.createdAt).toLocaleString()}</span>
+          <span class="tag">Hands: <b>${selected.sessionLen}</b></span>
+          <span class="tag">Score: <b>${avg}%</b></span>
+        </div>
+        <div class="row">
+          <select id="repFilter" class="btn small">
+            <option value="all">All</option>
+            <option value="wrong">Wrong</option>
+            <option value="correct">Correct</option>
+            <option value="best">Best</option>
+          </select>
+          <select id="repSort" class="btn small">
+            <option value="errors">Errors first</option>
+            <option value="time">Time</option>
+            <option value="pts">Score</option>
+            <option value="scenario">Scenario</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="split2">
+        <div class="stickyBox">
+          ${renderAttemptsTable(selected)}
+        </div>
+        <div class="stickyBox" id="attemptPreview">
+          ${renderAttemptPreview(selected, state.reportSelectedAttemptIdx)}
+        </div>
       </div>
     `;
+
+    const f = byId("repFilter");
+    const s = byId("repSort");
+    f.value = state.reportFilter;
+    s.value = state.reportSort;
+
+    f.addEventListener("change", () => {
+      state.reportFilter = f.value;
+      state.reportSelectedAttemptIdx = null;
+      renderReportsMain();
+    });
+    s.addEventListener("change", () => {
+      state.reportSort = s.value;
+      state.reportSelectedAttemptIdx = null;
+      renderReportsMain();
+    });
+
+    mainBody.querySelectorAll("[data-arow]").forEach(row => {
+      row.addEventListener("click", () => {
+        const idx = Number(row.getAttribute("data-arow"));
+        state.reportSelectedAttemptIdx = idx;
+        renderReportsMain();
+      });
+    });
+
+    // wire preview mini grid clicks
+    wirePreviewSelectionClicks(mainBody);
+
     window.onkeydown = null;
+    setTimeout(() => fitAllGrids(), 0);
   }
 
-  // Resizable left pane
+  function filteredSortedAttempts(report){
+    const list = (report.attempts || []).map((a,i)=>({a,i}));
+
+    const filt = state.reportFilter;
+    let out = list;
+    if(filt === "wrong") out = out.filter(x => x.a.tier === "wrong");
+    if(filt === "correct") out = out.filter(x => x.a.tier === "correct");
+    if(filt === "best") out = out.filter(x => x.a.tier === "best");
+
+    const sort = state.reportSort;
+    out = out.slice();
+    if(sort === "time"){
+      out.sort((x,y) => (x.i - y.i));
+    }else if(sort === "pts"){
+      out.sort((x,y) => (y.a.pts - x.a.pts) || (x.i - y.i));
+    }else if(sort === "scenario"){
+      out.sort((x,y) => String(x.a.scenarioName).localeCompare(String(y.a.scenarioName)) || (x.i - y.i));
+    }else{
+      // errors first
+      const rank = (t) => t === "wrong" ? 0 : (t === "correct" ? 1 : 2);
+      out.sort((x,y) => (rank(x.a.tier) - rank(y.a.tier)) || (x.i - y.i));
+    }
+    return out;
+  }
+
+  function renderAttemptsTable(report){
+    const rows = filteredSortedAttempts(report);
+    if(!rows.length) return `<div class="muted">No rows.</div>`;
+
+    const head = `
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="width:56px;">#</th>
+            <th>Scenario</th>
+            <th style="width:90px;">Hand</th>
+            <th style="width:140px;">You</th>
+            <th style="width:160px;">RNG</th>
+            <th style="width:90px;">Pts</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+    const body = rows.map(x => {
+      const a = x.a;
+      const cls = a.tier === "wrong" ? "trBad" : (a.tier === "correct" ? "trGood" : "trWarn");
+      const pts = a.pts ?? (a.tier==="best"?100:(a.tier==="correct"?70:0));
+      const you = escapeHTML(a.userAction);
+      const rng = escapeHTML(a.solverChoice);
+      return `
+        <tr class="${cls} rowClick" data-arow="${x.i}">
+          <td class="mono">${x.i+1}</td>
+          <td>${escapeHTML(a.scenarioName)}</td>
+          <td class="mono">${escapeHTML(a.hand)}</td>
+          <td>${you}</td>
+          <td style="color:var(--warn);">${rng}</td>
+          <td class="mono">${pts}</td>
+        </tr>
+      `;
+    }).join("");
+
+    return head + body + `</tbody></table>`;
+  }
+
+  function renderAttemptPreview(report, idx){
+    if(idx == null){
+      return `<div class="muted">Select a row.</div>`;
+    }
+    const a = report.attempts[idx];
+    if(!a) return `<div class="muted">Not found.</div>`;
+    const scen = getScenarioById(a.scenarioId);
+
+    if(!scen){
+      return `
+        <div>
+          <div class="row">
+            <span class="tag mono">${escapeHTML(a.hand)}</span>
+            <span class="tag">${escapeHTML(a.userAction)}</span>
+            <span class="tag" style="color:var(--warn); border-color:rgba(255,204,102,.25)">→ ${escapeHTML(a.solverChoice)}</span>
+          </div>
+          <div class="hr"></div>
+          <div class="muted">Scenario not found (maybe deleted).</div>
+        </div>
+      `;
+    }
+
+    state.selection = { scenarioId: scen.id, hand: a.hand };
+
+    return `
+      <div>
+        <div class="row" style="justify-content:space-between;">
+          <div class="row">
+            <span class="tag mono">${escapeHTML(a.hand)}</span>
+            <span class="tag">${escapeHTML(a.userAction)}</span>
+            <span class="tag" style="color:var(--warn); border-color:rgba(255,204,102,.25)">→ ${escapeHTML(a.solverChoice)}</span>
+          </div>
+          <span class="tag">${escapeHTML(scen.name)}</span>
+        </div>
+
+        <div class="hr"></div>
+
+        ${renderSelectionStripHTML({compact:false})}
+
+        <div class="hr"></div>
+
+        <div style="height:320px;">
+          ${renderGridHTML(scen, a.hand, {allowClickSelect:true, scenarioId: scen.id, small:true})}
+        </div>
+      </div>
+    `;
+  }
+
+  function wirePreviewSelectionClicks(container){
+    container.querySelectorAll(".cell[data-clickselect='1']").forEach(cell => {
+      cell.addEventListener("click", () => {
+        const sid = cell.getAttribute("data-sid");
+        const hand = cell.getAttribute("data-hand");
+        setSelection(sid, hand);
+      });
+    });
+  }
+
+  /* =========================
+     Mode switching & format switching
+  ========================= */
+  function syncModeUI(){
+    modeSeg.querySelectorAll("button").forEach(b => {
+      b.classList.toggle("active", b.getAttribute("data-mode") === state.mode);
+    });
+    formatSeg.querySelectorAll("button").forEach(b => {
+      b.classList.toggle("active", b.getAttribute("data-format") === state.format);
+    });
+    formatTag.textContent = `Format: ${state.format}`;
+
+    renderScenarioHeaderActions();
+    renderScenarioList();
+    renderTopEditorControls();
+    renderLeft();
+    renderMain();
+    saveUI();
+    setTimeout(() => fitAllGrids(), 0);
+  }
+
+  modeSeg.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-mode]");
+    if(!btn) return;
+
+    if(state.mode === "editor" && state.editorDirty){
+      const ok = confirm("You have unsaved changes. Leave without saving?");
+      if(!ok) return;
+    }
+
+    state.mode = btn.getAttribute("data-mode");
+
+    // leaving trainer results if switching away
+    if(state.mode !== "trainer") state.trainerResults = null;
+
+    syncModeUI();
+  });
+
+  formatSeg.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-format]");
+    if(!btn) return;
+
+    if(state.mode === "editor" && state.editorDirty){
+      const ok = confirm("You have unsaved changes. Switch without saving?");
+      if(!ok) return;
+    }
+
+    const nextFmt = btn.getAttribute("data-format");
+    if(nextFmt === state.format) return;
+
+    // stop session and clear results on format switch
+    state.sessionActive = false;
+    state.sessionQueue = [];
+    state.currentHand = null;
+    state.reveal = false;
+    state.attempts = [];
+    state.trainerResults = null;
+
+    state.format = nextFmt;
+
+    // ensure browse exists
+    if(!getBrowseScenarioId()){
+      const first = getVisibleScenarios()[0];
+      setBrowseScenarioId(first ? first.id : null);
+    }
+    closeEditor();
+
+    const b = getBrowseScenarioId();
+    state.selection = {scenarioId: b, hand: null};
+
+    syncModeUI();
+  });
+
+  window.addEventListener("beforeunload", (e) => {
+    if(state.editorDirty){
+      e.preventDefault();
+      e.returnValue = "";
+    }
+  });
+
+  /* =========================
+     Left / Main routing
+  ========================= */
+  function renderLeft(){
+    if(state.mode === "trainer") renderTrainerLeft();
+    else if(state.mode === "editor") renderEditorLeft();
+    else if(state.mode === "library") renderLibraryLeft();
+    else if(state.mode === "reports") renderReportsLeft();
+  }
+  function renderMain(){
+    if(state.mode === "trainer") renderTrainerMain();
+    else if(state.mode === "editor") renderEditorMain();
+    else if(state.mode === "library") renderLibraryMain();
+    else if(state.mode === "reports") renderReportsMain();
+  }
+
+  /* =========================
+     Global: save in editor hotkey
+  ========================= */
+  document.addEventListener("keydown", (ev) => {
+    const isSave = (ev.key.toLowerCase() === "s") && (ev.ctrlKey || ev.metaKey);
+    if(isSave && state.mode === "editor"){
+      ev.preventDefault();
+      saveEditorChanges();
+    }
+  });
+
+  /* =========================
+     Resizable left pane
+  ========================= */
   const divider = document.getElementById("dragDivider");
   let dragging = false;
   divider.addEventListener("mousedown", () => dragging = true);
@@ -2325,57 +2945,77 @@
     setTimeout(() => fitAllGrids(), 0);
   });
 
-  // Global hotkeys for save in editor
-  document.addEventListener("keydown", (ev) => {
-    const isSave = (ev.key.toLowerCase() === "s") && (ev.ctrlKey || ev.metaKey);
-    if(isSave && state.mode === "editor"){
-      ev.preventDefault();
-      saveEditorChanges();
-    }
-  });
+  /* =========================
+     Reset site data
+  ========================= */
+  byId("btnResetAll").addEventListener("click", () => {
+    if(!confirm("Reset all site data? (This browser only)")) return;
+    localStorage.removeItem(LS_SCEN);
+    localStorage.removeItem(LS_REP);
+    localStorage.removeItem(LS_UI);
 
-  // Grid click -> inspector (works outside edit mode too)
-  document.addEventListener("click", (ev) => {
-    const cell = ev.target.closest(".cell[data-hand][data-sid]");
-    if(!cell) return;
-    const wrap = cell.closest('[data-gridwrap="1"]');
-    if(!wrap) return;
-    if(wrap.getAttribute("data-allowinspect") !== "1") return;
+    // older keys too
+    localStorage.removeItem("pokerTrainerScenarios_v2");
+    localStorage.removeItem("pokerTrainerScenarios_v1");
+    localStorage.removeItem("pokerTrainerReports_v2");
+    localStorage.removeItem("pokerTrainerReports_v1");
+    localStorage.removeItem("pokerTrainerUI_v2");
+    localStorage.removeItem("pokerTrainerUI_v1");
 
-    const hand = cell.getAttribute("data-hand");
-    const sid = cell.getAttribute("data-sid");
-    if(hand && sid){
-      setInspector(sid, hand);
-    }
-  });
+    state.scenariosAll = [];
+    state.selectedIdsByFormat = { MTT: new Set(), Cash: new Set() };
+    state.browseScenarioIdByFormat = { MTT: null, Cash: null };
+    state.selection = { scenarioId: null, hand: null };
+    state.sessionActive = false;
+    state.trainerResults = null;
 
-  // Remove old trainer text: already removed.
-
-  // Scenario header: selection actions
-  byId("btnSelectAll").addEventListener("click", ()=>{});
-  byId("btnSelectNone").addEventListener("click", ()=>{});
-
-  // Import / delete / export only as above
-
-  // Editor controls in top bar are rendered by renderTopEditorControls
-
-  // Reset selection etc already handled
-
-  // Reset/initial inspector
-  function initInspector(){
-    const b = getBrowseScenarioId();
-    state.inspect = { scenarioId: b, hand: null };
-  }
-
-  // Top-level sync
-  function syncAll(){
-    initInspector();
+    saveScenarios();
+    toast("Reset");
     syncModeUI();
+  });
+
+  /* =========================
+     Autoplay from URL (new tab play)
+  ========================= */
+  function applyAutoplayFromURL(){
+    const u = new URL(window.location.href);
+    const fmt = u.searchParams.get("format");
+    const playId = u.searchParams.get("play");
+    const mode = u.searchParams.get("mode");
+    if(fmt === "MTT" || fmt === "Cash") state.format = fmt;
+    if(mode && ["trainer","editor","library","reports"].includes(mode)) state.mode = mode;
+
+    if(playId){
+      const sc = getScenarioById(playId);
+      if(sc && sc.format === state.format){
+        setBrowseScenarioId(sc.id);
+        setSelectedSet(new Set([sc.id]));
+        state.mode = "trainer";
+        startSessionForScenarioId(sc.id);
+        u.searchParams.delete("play");
+        u.searchParams.delete("mode");
+        history.replaceState({}, "", u.toString());
+      }
+    }
   }
 
-  // apply autoplay from URL (play new tab)
+  /* =========================
+     Init
+  ========================= */
+  migrateOlderIfNeeded();
+  loadUI();
+  loadScenarios();
   applyAutoplayFromURL();
-  syncAll();
+
+  // default selection scenario
+  const b = getBrowseScenarioId();
+  state.selection = { scenarioId: b, hand: null };
+
+  // initial report selection
+  const reps = loadReports().filter(r => (r.format || "MTT") === state.format);
+  state.reportSelectedId = reps[0]?.id || null;
+
+  syncModeUI();
   setTimeout(() => fitAllGrids(), 0);
 
 })();
