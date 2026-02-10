@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Preflop Trainer (Browser)</title>
+  <title>Preflop Trainer (Browser) – Save-enabled</title>
   <style>
     :root{
       --bg:#0b0f14;
@@ -15,11 +15,12 @@
       --accent:#6aa6ff;
 
       /* GTO-ish colors */
-      --fold:#2e6ea6;     /* blue */
-      --call:#54b96b;     /* green */
-      --raise:#ff3b3b;    /* bright red */
-      --raise2:#c62828;   /* deeper red */
-      --jam:#4b0f14;      /* dark maroon */
+      --fold:#2e6ea6;
+      --call:#54b96b;
+      --raise:#ff3b3b;
+      --raise2:#c62828;
+      --jam:#4b0f14;
+
       --warn:#ffcc66;
       --good:#5ce38a;
       --bad:#ff5c6a;
@@ -114,7 +115,7 @@
       background:rgba(255,92,106,.12);
     }
     .btn.small{padding:6px 10px; border-radius:10px; font-size:13px}
-    .btn.icon{display:inline-flex; gap:8px; align-items:center}
+    .btn:disabled{opacity:.5; cursor:not-allowed}
 
     .main{
       height:calc(100vh - 56px);
@@ -287,13 +288,6 @@
       font-family:var(--mono);
       text-shadow:0 1px 1px rgba(0,0,0,.35);
       user-select:none;
-    }
-    .resultBadge{
-      font-size:18px !important;
-      padding:10px 14px !important;
-      border-radius:999px !important;
-      font-weight:900 !important;
-      letter-spacing:.4px;
     }
 
     /* Poker action buttons */
@@ -474,6 +468,9 @@
 
     <div class="spacer"></div>
 
+    <!-- NEW: Editor Save controls in top bar -->
+    <div class="row" id="topEditorControls" style="display:none;"></div>
+
     <div class="pill"><span class="muted">Session</span> <b id="sessStat">—</b></div>
     <button class="btn small" id="btnResetAll">Reset site data</button>
   </div>
@@ -485,7 +482,6 @@
           <h3 id="scenarioPanelTitle">Scenarios</h3>
           <div class="spacer"></div>
           <div class="row" id="scenarioHeaderActions"></div>
-          <!-- hidden file input for Library tab only -->
           <input id="fileImport" type="file" accept=".json" multiple style="display:none" />
         </div>
         <div class="panelBody">
@@ -540,22 +536,14 @@
 
 <script>
 (() => {
-  // -----------------------------
   // Storage keys
-  // -----------------------------
   const LS_SCEN = "pokerTrainerScenarios_v1";
   const LS_REP  = "pokerTrainerReports_v1";
   const LS_UI   = "pokerTrainerUI_v1";
 
   const RANKS = "AKQJT98765432";
-  const suits = [
-    {s:"♠", cls:"blackSuit"}, {s:"♥", cls:"redSuit"},
-    {s:"♦", cls:"redSuit"},   {s:"♣", cls:"blackSuit"},
-  ];
 
-  // -----------------------------
   // DOM refs
-  // -----------------------------
   const modeSeg = document.getElementById("modeSeg");
   const leftTitle = document.getElementById("leftTitle");
   const leftBody  = document.getElementById("leftBody");
@@ -573,9 +561,9 @@
   const scenarioPanelHint = document.getElementById("scenarioPanelHint");
   const fileImport = document.getElementById("fileImport");
 
-  // -----------------------------
+  const topEditorControls = document.getElementById("topEditorControls");
+
   // Utils
-  // -----------------------------
   function toast(msg){
     const el = document.getElementById("toast");
     el.textContent = msg;
@@ -613,9 +601,7 @@
     return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
   }
 
-  // -----------------------------
-  // Grid fit: no scrolling (Firefox-friendly)
-  // -----------------------------
+  // Grid fit
   function fitAllGrids(){ document.querySelectorAll(".grid").forEach(g => fitGrid(g)); }
   function fitGrid(gridEl){
     if(!gridEl) return;
@@ -645,9 +631,7 @@
     resizeT = setTimeout(() => fitAllGrids(), 60);
   });
 
-  // -----------------------------
-  // Scenario schema normalization
-  // -----------------------------
+  // Scenario normalization
   function normalizeScenario(raw){
     if(!raw || typeof raw !== "object") throw new Error("Invalid JSON");
     const name = String(raw.name ?? raw.scenarioName ?? raw.title ?? "Unnamed Scenario");
@@ -696,9 +680,7 @@
     return {stack, pos, node};
   }
 
-  // -----------------------------
   // State
-  // -----------------------------
   const state = {
     mode: "trainer",
     format: "MTT",
@@ -711,7 +693,7 @@
     sessionActive: false,
     sessionQueue: [],
     currentIdx: 0,
-    currentHand: null,  // {scenario, hand, rng, solverChoice, normalized, cards}
+    currentHand: null,
     reveal: false,
     attempts: [],
 
@@ -755,9 +737,7 @@
 
   loadScenarios();
 
-  // -----------------------------
   // Actions / colors / gradients
-  // -----------------------------
   function actionColor(action){
     const a = action.toLowerCase();
     if(a === "fold") return getCSS("--fold");
@@ -823,9 +803,7 @@
     return `linear-gradient(to right, ${parts.join(", ")})`;
   }
 
-  // -----------------------------
   // 169 combo labels
-  // -----------------------------
   function labelFromRC(r,c){
     const hi = RANKS[Math.min(r,c)];
     const lo = RANKS[Math.max(r,c)];
@@ -842,14 +820,15 @@
     return out;
   }
   const ALL_LABELS = allComboLabels();
-
   function randomHandLabel(){
     return ALL_LABELS[Math.floor(Math.random()*ALL_LABELS.length)];
   }
 
-  // -----------------------------
-  // Card rendering (stable per hand)
-  // -----------------------------
+  // Cards (stable per hand)
+  const suits = [
+    {s:"♠", cls:"blackSuit"}, {s:"♥", cls:"redSuit"},
+    {s:"♦", cls:"redSuit"},   {s:"♣", cls:"blackSuit"},
+  ];
   function handToTwoCards(hand){
     const r1 = hand[0], r2 = hand[1];
     const suited = hand.length === 3 && hand[2] === "s";
@@ -879,30 +858,23 @@
     `;
   }
 
-  // -----------------------------
   // Raise size sorting + hotkeys
-  // -----------------------------
   function sortRaisesSmallToLarge(raises){
     const key = (a)=>{
-      const m = a.toLowerCase().match(/raise\s*(\d+)/);
+      const m = a.toLowerCase().match(/raise\s*(\d+)/i);
       if(m) return parseInt(m[1],10);
-      // treat plain "Raise" as size 1
       return 1;
     };
     return [...raises].sort((a,b)=>key(a)-key(b));
   }
   function numberedAggroActions(scenario){
-    // 1..N are raise sizes (smallest->largest), Jam is last if present.
     const raises = sortRaisesSmallToLarge(scenario.actions.filter(a => a.toLowerCase().startsWith("raise")));
     const out = [...raises];
     if(scenario.actions.some(a => a.toLowerCase() === "jam")) out.push("Jam");
-    // if no raises but Jam exists => Jam becomes "1"
     return out;
   }
 
-  // -----------------------------
   // RNG scoring
-  // -----------------------------
   function aggressionOrder(actions){
     const raises = actions.filter(a => a.toLowerCase().startsWith("raise"));
     const jam = actions.filter(a => a.toLowerCase() === "jam");
@@ -913,7 +885,6 @@
       if(m) return parseInt(m[1],10);
       return 1;
     };
-    // more aggressive first: Jam, largest raise ... smallest raise, Call, Fold
     raises.sort((a,b) => raiseKey(b) - raiseKey(a));
     return [...jam, ...raises, ...call, ...fold];
   }
@@ -942,9 +913,7 @@
     return {tier:"wrong", pts:0};
   }
 
-  // -----------------------------
-  // Scenario panel header actions (per tab)
-  // -----------------------------
+  // Scenario header actions
   function renderScenarioHeaderActions(){
     scenarioHeaderActions.innerHTML = "";
 
@@ -957,7 +926,6 @@
     };
 
     if(state.mode === "library"){
-      // Import only here (per your request)
       const importBtn = document.createElement("button");
       importBtn.className = "btn small";
       importBtn.textContent = "Import JSON";
@@ -970,22 +938,19 @@
       scenarioPanelHint.textContent = "Library: import, create, export, delete scenarios.";
 
     } else if(state.mode === "trainer"){
-      // No import here
       scenarioHeaderActions.appendChild(mkBtn("New Scenario", "primary", () => createNewScenario(true)));
       scenarioPanelHint.textContent = "Trainer: select scenarios to include in sessions. Import is in Library.";
 
     } else if(state.mode === "editor"){
       scenarioHeaderActions.appendChild(mkBtn("New Scenario", "primary", () => createNewScenario(true)));
-      scenarioPanelHint.textContent = "Editor: paint ranges. Save to persist changes.";
+      scenarioPanelHint.textContent = "Editor: paint ranges. Click Save (or Ctrl/⌘+S) to keep changes.";
 
     } else if(state.mode === "reports"){
       scenarioPanelHint.textContent = "Reports: your sessions are stored locally in this browser.";
     }
   }
 
-  // -----------------------------
   // Scenario list
-  // -----------------------------
   function renderScenarioList(){
     scenarioList.innerHTML = "";
     scenarioCount.textContent = String(state.scenarios.length);
@@ -1034,9 +999,7 @@
     });
   }
 
-  // -----------------------------
-  // Create new scenario (wizard)
-  // -----------------------------
+  // Create new scenario
   function emptyGridForActions(actions){
     const grid = {};
     for(const hand of ALL_LABELS){
@@ -1086,9 +1049,7 @@
     if(openEditorAfter) openEditor(scen.id);
   }
 
-  // -----------------------------
-  // Import / export / delete (Library only)
-  // -----------------------------
+  // Import / export / delete
   fileImport.addEventListener("change", async (e) => {
     const files = Array.from(e.target.files || []);
     if(!files.length) return;
@@ -1159,9 +1120,24 @@
     scenarioSelectedCount.textContent = String(state.selectedScenarioIds.size);
   });
 
-  // -----------------------------
   // Mode switching
-  // -----------------------------
+  function renderTopEditorControls(){
+    // Show big obvious save controls only in editor mode
+    if(state.mode !== "editor" || !state.editorDraft){
+      topEditorControls.style.display = "none";
+      topEditorControls.innerHTML = "";
+      return;
+    }
+    topEditorControls.style.display = "flex";
+    topEditorControls.innerHTML = `
+      <span class="badge ${state.editorDirty ? "warn" : "good"}">${state.editorDirty ? "Unsaved changes" : "Saved"}</span>
+      <button class="btn small primary" id="topSave" ${state.editorDirty ? "" : "disabled"}>Save (Ctrl/⌘+S)</button>
+      <button class="btn small" id="topDiscard" ${state.editorDirty ? "" : "disabled"}>Discard</button>
+    `;
+    topEditorControls.querySelector("#topSave").addEventListener("click", saveEditorChanges);
+    topEditorControls.querySelector("#topDiscard").addEventListener("click", discardEditorChanges);
+  }
+
   function syncModeUI(){
     modeSeg.querySelectorAll("button").forEach(b => {
       b.classList.toggle("active", b.getAttribute("data-mode") === state.mode);
@@ -1174,6 +1150,7 @@
 
     renderScenarioHeaderActions();
     renderScenarioList();
+    renderTopEditorControls();
 
     if(state.mode === "trainer"){
       renderTrainerLeft();
@@ -1195,8 +1172,23 @@
   modeSeg.addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-mode]");
     if(!btn) return;
+
+    // warn if leaving editor with unsaved changes
+    if(state.mode === "editor" && state.editorDirty){
+      const ok = confirm("You have unsaved changes. Leave without saving?");
+      if(!ok) return;
+    }
+
     state.mode = btn.getAttribute("data-mode");
     syncModeUI();
+  });
+
+  // Warn on refresh/close if dirty
+  window.addEventListener("beforeunload", (e) => {
+    if(state.editorDirty){
+      e.preventDefault();
+      e.returnValue = "";
+    }
   });
 
   document.getElementById("btnResetAll").addEventListener("click", () => {
@@ -1214,9 +1206,7 @@
     toast("Reset complete");
   });
 
-  // -----------------------------
   // Trainer UI
-  // -----------------------------
   function renderTrainerLeft(){
     leftTitle.textContent = "Trainer Controls";
     leftBody.innerHTML = `
@@ -1233,7 +1223,7 @@
         <div class="pill"><span class="muted">Session length</span> <b>${state.sessionLen}</b></div>
         <input id="sessLen" type="range" min="5" max="60" step="1" value="${state.sessionLen}" />
       </div>
-      <div class="tiny muted">Default is 20 hands. Session samples from the scenarios you checked.</div>
+      <div class="tiny muted">Default is 20 hands.</div>
 
       <div class="hr"></div>
 
@@ -1245,7 +1235,7 @@
       <div class="hr"></div>
 
       <div class="tiny muted">
-        Hotkeys: X=Fold, C=Call, Z=Jam, 1..9=Raise sizes (Jam is the largest number), Enter=Next (after reveal).
+        Hotkeys: X=Fold, C=Call, Z=Jam, 1..9=Raise sizes (Jam is largest), Enter=Next (after reveal).
       </div>
     `;
 
@@ -1278,7 +1268,7 @@
             <span><span class="sw" style="background:var(--jam)"></span>Jam</span>
           </div>
           <div class="hr"></div>
-          <div class="tiny muted">Import JSON is in <b>Library</b>. Create new scenarios via <b>New Scenario</b>.</div>
+          <div class="tiny muted">To keep edits: go to <b>Editor</b> and click <b>Save</b> (Ctrl/⌘+S).</div>
         </div>
       `;
       sessStat.textContent = "—";
@@ -1298,13 +1288,11 @@
     const info = parseScenarioName(scenario.name);
     const gridPanelHeight = "calc(100vh - 56px - 14px - 14px - 140px)";
 
-    // Build buttons: Fold, Call, each Raise size, Jam
     const hasCall = scenario.actions.some(a=>a.toLowerCase()==="call");
     const raiseActions = sortRaisesSmallToLarge(scenario.actions.filter(a=>a.toLowerCase().startsWith("raise")));
     const hasJam = scenario.actions.some(a=>a.toLowerCase()==="jam");
 
-    // hotkey numbers map: raise sizes then jam last
-    const numbered = numberedAggroActions(scenario); // array of actions in number order
+    const numbered = numberedAggroActions(scenario);
     const keyForAction = (act) => {
       const idx = numbered.findIndex(x => x.toLowerCase() === act.toLowerCase());
       return idx >= 0 ? String(idx+1) : "";
@@ -1368,7 +1356,7 @@
                   <div class="tiny muted">RNG selected: <span class="mono">${escapeHTML(solverChoice)}</span></div>
                 </div>
                 <div class="row">
-                  <span class="badge resultBadge ${state.lastTierClass || ""}" id="lastScoreBadge">—</span>
+                  <span class="badge ${state.lastTierClass || ""}" id="lastScoreBadge" style="font-size:16px;padding:10px 14px;font-weight:900;border-radius:999px;">—</span>
                   <button class="btn primary" id="btnNext">Next hand <span class="mono">(Enter)</span></button>
                 </div>
               </div>
@@ -1399,7 +1387,6 @@
       </div>
     `;
 
-    // wire actions
     const actionBar = document.getElementById("actionBar");
     actionBar.querySelectorAll("[data-act]").forEach(btn => {
       btn.addEventListener("click", () => handleUserAction(btn.getAttribute("data-act")));
@@ -1409,16 +1396,13 @@
       document.getElementById("btnNext").addEventListener("click", nextHand);
     }
 
-    // keyboard shortcuts
     window.onkeydown = (ev) => {
       if(!state.sessionActive) return;
 
-      // Enter -> next only after reveal
       if(state.reveal && ev.key === "Enter"){
         ev.preventDefault();
         return nextHand();
       }
-      // block input after reveal
       if(state.reveal) return;
 
       const k = ev.key.toLowerCase();
@@ -1481,7 +1465,7 @@
       rng: pick.rng,
       solverChoice: pick.choice,
       normalized: pick.normalized,
-      cards: handToTwoCards(item.hand), // stable suits for this hand
+      cards: handToTwoCards(item.hand),
     };
     state.reveal = false;
     state.lastTierClass = "";
@@ -1502,14 +1486,6 @@
     if(!ch || state.reveal) return;
 
     const scenario = ch.scenario;
-
-    // Accept "Jam" special
-    if(action === "Jam" && !scenario.actions.some(a=>a.toLowerCase()==="jam")){
-      toast("Jam not available");
-      return;
-    }
-
-    // Validate action exists (case-insensitive)
     const actual = scenario.actions.find(a => a.toLowerCase() === String(action).toLowerCase());
     if(!actual){
       toast("Action not available in this scenario");
@@ -1535,7 +1511,7 @@
 
     const badge = document.getElementById("lastScoreBadge");
     if(badge){
-      badge.className = `badge resultBadge ${state.lastTierClass}`;
+      badge.className = `badge ${state.lastTierClass}`;
       badge.textContent = tier === "best" ? `BEST · 100` : (tier==="correct" ? `CORRECT · 70` : `WRONG · 0`);
     }
 
@@ -1581,9 +1557,7 @@
     toast(`Session ${status}. Avg ${Math.round(avg)}%`);
   }
 
-  // -----------------------------
   // Grid renderer
-  // -----------------------------
   function renderGridHTML(scenario, highlightHand, selectable){
     const actions = scenario.actions;
     const cells = [];
@@ -1615,9 +1589,7 @@
     `;
   }
 
-  // -----------------------------
   // Editor
-  // -----------------------------
   function openEditor(id){
     const scen = getScenarioById(id);
     if(!scen){ toast("Scenario not found"); return; }
@@ -1644,6 +1616,36 @@
     state.selectedCells.clear();
   }
 
+  // NEW: Central save function used by buttons + hotkey
+  function saveEditorChanges(){
+    if(!state.editorDraft) return;
+    const idx = state.scenarios.findIndex(s => s.id === state.editorDraft.id);
+    if(idx >= 0){
+      state.editorDraft.updatedAt = nowISO();
+      state.scenarios[idx] = state.editorDraft;
+      saveScenarios();
+      state.editorDirty = false;
+      toast("Saved");
+      renderScenarioList();
+      renderEditorLeft();
+      renderTopEditorControls();
+    }
+  }
+  function discardEditorChanges(){
+    if(!state.editorDraft) return;
+    const ok = confirm("Discard unsaved changes?");
+    if(!ok) return;
+    const original = getScenarioById(state.editorScenarioId);
+    if(!original) return;
+    state.editorDraft = JSON.parse(JSON.stringify(original));
+    state.editorDirty = false;
+    state.selectedCells.clear();
+    toast("Discarded");
+    renderEditorLeft();
+    renderEditorMain();
+    renderTopEditorControls();
+  }
+
   function renderEditorLeft(){
     leftTitle.textContent = "Editor";
     const scen = state.editorDraft;
@@ -1665,14 +1667,14 @@
       <div class="col">
         <div style="font-weight:900;">Scenario name</div>
         <input class="textInput" id="scenNameInput" value="${escapeHTML(scen.name)}" />
-        <div class="tiny muted">Changes only persist after Save.</div>
+        <div class="tiny muted">Changes only persist after Save (Ctrl/⌘+S).</div>
       </div>
 
       <div class="hr"></div>
 
       <div class="col">
         <div style="font-weight:900;">Paint palette</div>
-        <div class="tiny muted">Drag over cells to paint these action frequencies. Sliders auto-normalize to 100.</div>
+        <div class="tiny muted">Drag over cells to paint these action frequencies. Sliders normalize to 100.</div>
       </div>
 
       <div class="hr"></div>
@@ -1682,8 +1684,8 @@
       <div class="hr"></div>
 
       <div class="row">
-        <button class="btn primary" id="btnSave">Save</button>
-        <button class="btn" id="btnDiscard">Discard</button>
+        <button class="btn primary" id="btnSave" ${state.editorDirty ? "" : "disabled"}>Save (Ctrl/⌘+S)</button>
+        <button class="btn" id="btnDiscard" ${state.editorDirty ? "" : "disabled"}>Discard</button>
         <button class="btn" id="btnExportDraft">Export JSON</button>
       </div>
 
@@ -1692,14 +1694,15 @@
       <div class="tiny muted">Tip: click-drag paints. Press Esc to clear selection.</div>
     `;
 
-    // name input -> mark dirty
     const nameInput = leftBody.querySelector("#scenNameInput");
     nameInput.addEventListener("input", () => {
       state.editorDraft.name = nameInput.value;
       state.editorDirty = true;
+      renderTopEditorControls();
+      renderEditorLeft(); // to enable Save button
+      renderScenarioList();
     });
 
-    // palette UI
     const pal = leftBody.querySelector("#paletteArea");
     pal.innerHTML = actions.map(a => {
       const v = Math.round((state.palette[a] ?? 0));
@@ -1719,6 +1722,7 @@
         state.palette[a] = Number(r.value);
         state.palette = normalizePctMap(state.palette, actions);
         state.editorDirty = true;
+        renderTopEditorControls();
         renderEditorLeft();
         renderEditorMain();
       });
@@ -1729,36 +1733,14 @@
         for(const x of actions) state.palette[x] = 0;
         state.palette[a] = 100;
         state.editorDirty = true;
+        renderTopEditorControls();
         renderEditorLeft();
         renderEditorMain();
       });
     });
 
-    leftBody.querySelector("#btnSave").addEventListener("click", () => {
-      if(!state.editorDraft) return;
-      const idx = state.scenarios.findIndex(s => s.id === state.editorDraft.id);
-      if(idx >= 0){
-        state.editorDraft.updatedAt = nowISO();
-        state.scenarios[idx] = state.editorDraft;
-        saveScenarios();
-        state.editorDirty = false;
-        toast("Saved");
-        renderScenarioList();
-        renderEditorLeft();
-      }
-    });
-
-    leftBody.querySelector("#btnDiscard").addEventListener("click", () => {
-      if(!confirm("Discard unsaved changes?")) return;
-      const original = getScenarioById(state.editorScenarioId);
-      if(!original) return;
-      state.editorDraft = JSON.parse(JSON.stringify(original));
-      state.editorDirty = false;
-      state.selectedCells.clear();
-      toast("Discarded");
-      renderEditorLeft();
-      renderEditorMain();
-    });
+    leftBody.querySelector("#btnSave").addEventListener("click", saveEditorChanges);
+    leftBody.querySelector("#btnDiscard").addEventListener("click", discardEditorChanges);
 
     leftBody.querySelector("#btnExportDraft").addEventListener("click", () => {
       if(!state.editorDraft) return;
@@ -1782,7 +1764,7 @@
         <div class="row" style="justify-content:space-between; align-items:center;">
           <div>
             <div style="font-weight:900;">Paint the grid</div>
-            <div class="tiny muted">Click-drag paints current palette onto cells. No autosave.</div>
+            <div class="tiny muted">No autosave. Use Save (Ctrl/⌘+S) when you’re done.</div>
           </div>
           <div class="row">
             <span class="tag">Selected cells: <b>${state.selectedCells.size}</b></span>
@@ -1811,6 +1793,7 @@
         el.style.backgroundImage = buildGradientForCell(pct, actions);
         el.classList.add("sel");
       }
+      renderTopEditorControls();
     };
 
     const clearSelection = () => {
@@ -1837,17 +1820,26 @@
     });
     window.addEventListener("mouseup", () => state.paintDown = false);
 
+    // Editor hotkeys: Esc clears selection, Ctrl/Cmd+S saves
     window.onkeydown = (ev) => {
       if(state.mode !== "editor") return;
-      if(ev.key === "Escape") clearSelection();
+
+      if(ev.key === "Escape"){
+        clearSelection();
+        return;
+      }
+      const isSave = (ev.key.toLowerCase() === "s") && (ev.ctrlKey || ev.metaKey);
+      if(isSave){
+        ev.preventDefault();
+        saveEditorChanges();
+        return;
+      }
     };
 
     setTimeout(() => fitAllGrids(), 0);
   }
 
-  // -----------------------------
   // Library mode
-  // -----------------------------
   function renderLibraryLeft(){
     leftTitle.textContent = "Library";
     leftBody.innerHTML = `
@@ -1876,17 +1868,14 @@
       <div class="panel" style="background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:14px;">
         <h2 style="margin:0 0 8px; font-size:18px;">Scenario management</h2>
         <div class="muted">
-          Use <b>Import JSON</b> in the scenarios panel header, or <b>New Scenario</b> to create one from scratch.
-          Edit any scenario via the scenario list.
+          Use <b>Import JSON</b> (Library tab) or <b>New Scenario</b>. Edit a scenario, then <b>Save</b> in Editor.
         </div>
       </div>
     `;
     window.onkeydown = null;
   }
 
-  // -----------------------------
   // Reports
-  // -----------------------------
   function renderReportsLeft(){
     leftTitle.textContent = "Reports";
     const reps = loadReports();
@@ -1898,13 +1887,13 @@
       <div class="hr"></div>
       <div class="reportList" id="reportList"></div>
       <div class="hr"></div>
-      <div class="tiny muted">Click a report to inspect attempts.</div>
+      <div class="tiny muted">Reports stored in this browser.</div>
     `;
     const list = leftBody.querySelector("#reportList");
-    list.innerHTML = reps.slice(0, 40).map(r => {
+    list.innerHTML = reps.slice(0, 30).map(r => {
       const b = r.breakdown || {best:0,correct:0,wrong:0};
       return `
-        <div class="report" data-rep="${escapeHTML(r.id)}">
+        <div class="report">
           <div class="row" style="justify-content:space-between;">
             <b>${escapeHTML(r.status || "")}</b>
             <span class="badge ${r.avgScore >= 80 ? "good" : (r.avgScore >= 60 ? "warn" : "bad")}">${r.avgScore}%</span>
@@ -1913,11 +1902,7 @@
           <div class="tiny muted">Best ${b.best} · Correct ${b.correct} · Wrong ${b.wrong}</div>
         </div>
       `;
-    }).join("");
-
-    list.querySelectorAll(".report[data-rep]").forEach(el => {
-      el.addEventListener("click", () => renderReportDetail(el.getAttribute("data-rep")));
-    });
+    }).join("") || `<div class="muted">No reports yet.</div>`;
 
     leftBody.querySelector("#btnClearReports").addEventListener("click", () => {
       if(!confirm("Delete all reports from this browser?")) return;
@@ -1933,76 +1918,13 @@
     mainBody.innerHTML = `
       <div class="panel" style="background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:14px;">
         <h2 style="margin:0 0 8px; font-size:18px;">Session reports</h2>
-        <div class="muted">Your sessions are stored locally in this browser. Click a report on the left to inspect hands.</div>
+        <div class="muted">Your sessions are stored locally in this browser.</div>
       </div>
     `;
     window.onkeydown = null;
   }
 
-  function renderReportDetail(reportId){
-    const reps = loadReports();
-    const rep = reps.find(r => r.id === reportId);
-    if(!rep) return toast("Report not found");
-
-    mainTitle.textContent = "Report";
-    scenarioTag.textContent = "Report detail";
-
-    const attempts = rep.attempts || [];
-    const rows = attempts.map((a, i) => {
-      const cls = a.tier === "best" ? "good" : (a.tier==="correct" ? "warn":"bad");
-      return `
-        <tr>
-          <td class="mono">${i+1}</td>
-          <td>${escapeHTML(a.scenarioName || "")}</td>
-          <td class="mono">${escapeHTML(a.hand)}</td>
-          <td class="mono">${a.rng}</td>
-          <td class="mono">${escapeHTML(a.solverChoice)}</td>
-          <td class="mono">${escapeHTML(a.userAction)}</td>
-          <td><span class="badge ${cls}">${a.pts}</span></td>
-        </tr>
-      `;
-    }).join("");
-
-    mainBody.innerHTML = `
-      <div class="panel" style="background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:14px; overflow:auto; height: calc(100vh - 56px - 14px - 14px - 70px);">
-        <div class="row" style="justify-content:space-between; align-items:center;">
-          <div>
-            <div style="font-weight:900; font-size:16px;">${escapeHTML(rep.status)} · ${rep.avgScore}%</div>
-            <div class="tiny muted">${new Date(rep.createdAt).toLocaleString()} · ${rep.format} · ${rep.sessionLen} hands</div>
-          </div>
-          <button class="btn small" id="btnBackReports">Back</button>
-        </div>
-
-        <div class="hr"></div>
-
-        <table style="width:100%; border-collapse:collapse; font-size:13px;">
-          <thead>
-            <tr style="text-align:left; color:var(--muted); font-size:12px;">
-              <th style="padding:8px 6px; border-bottom:1px solid var(--line);">#</th>
-              <th style="padding:8px 6px; border-bottom:1px solid var(--line);">Scenario</th>
-              <th style="padding:8px 6px; border-bottom:1px solid var(--line);">Hand</th>
-              <th style="padding:8px 6px; border-bottom:1px solid var(--line);">RNG</th>
-              <th style="padding:8px 6px; border-bottom:1px solid var(--line);">Solver</th>
-              <th style="padding:8px 6px; border-bottom:1px solid var(--line);">You</th>
-              <th style="padding:8px 6px; border-bottom:1px solid var(--line);">Pts</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows || `<tr><td colspan="7" class="muted" style="padding:10px;">No attempts.</td></tr>`}
-          </tbody>
-        </table>
-      </div>
-    `;
-    document.getElementById("btnBackReports").addEventListener("click", () => {
-      syncModeUI();
-      renderReportsMain();
-    });
-    window.onkeydown = null;
-  }
-
-  // -----------------------------
   // Resizable left pane
-  // -----------------------------
   const divider = document.getElementById("dragDivider");
   let dragging = false;
   divider.addEventListener("mousedown", () => dragging = true);
@@ -2017,9 +1939,16 @@
     setTimeout(() => fitAllGrids(), 0);
   });
 
-  // -----------------------------
-  // Initial render + scenario panel title
-  // -----------------------------
+  // Global hotkey for save in editor (Ctrl/Cmd+S)
+  document.addEventListener("keydown", (ev) => {
+    const isSave = (ev.key.toLowerCase() === "s") && (ev.ctrlKey || ev.metaKey);
+    if(isSave && state.mode === "editor"){
+      ev.preventDefault();
+      saveEditorChanges();
+    }
+  });
+
+  // Initial render
   function updateScenarioPanelTitle(){
     scenarioPanelTitle.textContent = state.mode === "library"
       ? "Scenarios (Import in this tab)"
@@ -2031,14 +1960,8 @@
     syncModeUI();
   }
 
-  // Mode-specific scenario header actions need state.mode set first
   syncAll();
-
-  // -----------------------------
-  // Start-up: also make sure grid fit after first paint
-  // -----------------------------
   setTimeout(() => fitAllGrids(), 0);
-
 })();
 </script>
 </body>
