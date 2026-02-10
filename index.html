@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Preflop Trainer (Browser) – Save-enabled</title>
+  <title>Preflop Trainer (Browser) – vNext</title>
   <style>
     :root{
       --bg:#0b0f14;
@@ -117,6 +117,21 @@
     .btn.small{padding:6px 10px; border-radius:10px; font-size:13px}
     .btn:disabled{opacity:.5; cursor:not-allowed}
 
+    .iconBtn{
+      width:30px;height:30px;
+      display:inline-flex;align-items:center;justify-content:center;
+      border:1px solid var(--line);
+      background:rgba(16,24,36,.65);
+      border-radius:10px;
+      cursor:pointer;
+      color:var(--muted);
+      padding:0;
+    }
+    .iconBtn:hover{filter:brightness(1.1); color:var(--text)}
+    .iconBtn:active{transform:translateY(1px)}
+    .iconBtn.primary{border-color:rgba(106,166,255,.35); background:rgba(106,166,255,.14)}
+    .iconBtn.danger{border-color:rgba(255,92,106,.35); background:rgba(255,92,106,.10)}
+
     .main{
       height:calc(100vh - 56px);
       display:flex;
@@ -202,7 +217,7 @@
       display:flex;
       flex-direction:column;
       gap:8px;
-      max-height:330px;
+      max-height:360px;
       overflow:auto;
       padding-right:6px;
     }
@@ -226,12 +241,32 @@
       color:var(--text);
       line-height:1.25;
       word-break:break-word;
+      cursor:pointer;
     }
+    .itemTitle:hover{ text-decoration: underline; }
     .itemMeta{
       display:flex; gap:6px; flex-wrap:wrap;
       color:var(--muted);
       font-size:12px;
     }
+
+    /* Compact trainer list */
+    .itemCompact{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .itemLeft{
+      display:flex; gap:10px; align-items:flex-start; flex:1; min-width:0;
+    }
+    .itemName{
+      font-size:13px; color:var(--text); line-height:1.25;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      cursor:pointer;
+    }
+    .itemName:hover{ text-decoration: underline; }
+    .itemIcons{display:flex; gap:6px; align-items:center; flex:0 0 auto;}
 
     /* Cards */
     .scenarioName{
@@ -447,6 +482,21 @@
       border-color:rgba(106,166,255,.45);
       box-shadow: 0 0 0 4px rgba(106,166,255,.12);
     }
+
+    .inspectBox{
+      border:1px solid var(--line);
+      background:rgba(15,22,33,.55);
+      border-radius:14px;
+      padding:10px 12px;
+    }
+    .inspectTitle{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+    }
+    .inspectTitle b{font-size:13px}
+    .inspectRow{
+      margin-top:8px;
+      display:flex; gap:8px; flex-wrap:wrap;
+    }
   </style>
 </head>
 <body>
@@ -466,9 +516,14 @@
       <button data-mode="reports">Reports</button>
     </div>
 
+    <div class="seg" id="formatSeg" title="MTT and Cash are separate scenario libraries">
+      <button data-format="MTT" class="active">MTT</button>
+      <button data-format="Cash">Cash</button>
+    </div>
+
     <div class="spacer"></div>
 
-    <!-- NEW: Editor Save controls in top bar -->
+    <!-- Editor Save controls -->
     <div class="row" id="topEditorControls" style="display:none;"></div>
 
     <div class="pill"><span class="muted">Session</span> <b id="sessStat">—</b></div>
@@ -502,14 +557,14 @@
           </div>
 
           <div class="tiny muted" style="margin-top:10px;" id="scenarioPanelHint">
-            In Trainer: select scenarios to include in sessions. Import is in Library.
+            MTT/Cash are separate scenario lists.
           </div>
         </div>
       </div>
 
       <div class="panel" style="margin:0 14px 14px;">
         <div class="panelHeader">
-          <h3 id="leftTitle">Trainer Controls</h3>
+          <h3 id="leftTitle">Controls</h3>
           <div class="spacer"></div>
           <span class="badge mono" id="hotkeyHint">Hotkeys: X,C,Z,1..9, Enter</span>
         </div>
@@ -525,7 +580,7 @@
           <h3 id="mainTitle">Trainer</h3>
           <div class="spacer"></div>
           <span class="tag" id="scenarioTag">—</span>
-          <span class="tag" id="formatTag">Mode: MTT</span>
+          <span class="tag" id="formatTag">Format: MTT</span>
         </div>
         <div class="panelBody" id="mainBody" style="height: calc(100vh - 56px - 14px - 14px - 70px);"></div>
       </div>
@@ -536,15 +591,16 @@
 
 <script>
 (() => {
-  // Storage keys
-  const LS_SCEN = "pokerTrainerScenarios_v1";
-  const LS_REP  = "pokerTrainerReports_v1";
-  const LS_UI   = "pokerTrainerUI_v1";
+  // Storage keys (new schema)
+  const LS_SCEN = "pokerTrainerScenarios_v2";
+  const LS_REP  = "pokerTrainerReports_v2";
+  const LS_UI   = "pokerTrainerUI_v2";
 
   const RANKS = "AKQJT98765432";
 
   // DOM refs
   const modeSeg = document.getElementById("modeSeg");
+  const formatSeg = document.getElementById("formatSeg");
   const leftTitle = document.getElementById("leftTitle");
   const leftBody  = document.getElementById("leftBody");
   const mainTitle = document.getElementById("mainTitle");
@@ -600,6 +656,7 @@
   function getCSS(varName){
     return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
   }
+  function byId(id){ return document.getElementById(id); }
 
   // Grid fit
   function fitAllGrids(){ document.querySelectorAll(".grid").forEach(g => fitGrid(g)); }
@@ -632,7 +689,7 @@
   });
 
   // Scenario normalization
-  function normalizeScenario(raw){
+  function normalizeScenario(raw, assignFormat){
     if(!raw || typeof raw !== "object") throw new Error("Invalid JSON");
     const name = String(raw.name ?? raw.scenarioName ?? raw.title ?? "Unnamed Scenario");
     const tags = (raw.tags && typeof raw.tags==="object") ? raw.tags : {};
@@ -657,27 +714,17 @@
       grid[hand] = obj;
     }
 
+    const format = String(raw.format || tags.format || assignFormat || "MTT");
     return {
       id: raw.id || crypto.randomUUID(),
       name,
       actions,
-      tags,
+      tags: {...tags, format},
+      format,
       grid,
       created: raw.created || "import",
       updatedAt: nowISO(),
     };
-  }
-
-  function parseScenarioName(name){
-    const parts = name.split(" - ").map(s => s.trim()).filter(Boolean);
-    let stack = null, pos = null, node = null;
-    if(parts.length){
-      const m = parts[0].match(/(\d+)\s*bb/i);
-      if(m) stack = m[1] + "bb";
-    }
-    if(parts.length >= 2) pos = parts[1];
-    if(parts.length >= 3) node = parts.slice(2).join(" - ");
-    return {stack, pos, node};
   }
 
   // State
@@ -685,8 +732,12 @@
     mode: "trainer",
     format: "MTT",
 
-    scenarios: [],
-    selectedScenarioIds: new Set(),
+    scenariosAll: [],                    // all scenarios across formats
+    selectedIdsByFormat: { MTT: new Set(), Cash: new Set() },
+
+    // browsing (outside edit mode)
+    browseScenarioIdByFormat: { MTT: null, Cash: null },
+    inspect: { hand:null, scenarioId:null }, // clicked cell inspector
 
     // Trainer session
     sessionLen: 20,
@@ -706,24 +757,102 @@
     palette: {},
   };
 
-  const uiSaved = loadJSON(LS_UI, null);
-  if(uiSaved && typeof uiSaved === "object"){
-    if(uiSaved.leftWidth) document.getElementById("leftPane").style.width = uiSaved.leftWidth + "px";
-    if(uiSaved.format) state.format = uiSaved.format;
+  // Migration: if old v1 key exists, pull into v2 (as MTT) once
+  function migrateV1IfNeeded(){
+    const v2 = localStorage.getItem(LS_SCEN);
+    if(v2) return;
+    const old = localStorage.getItem("pokerTrainerScenarios_v1");
+    if(!old) return;
+    try{
+      const arr = JSON.parse(old);
+      if(Array.isArray(arr)){
+        const converted = arr.map(s => {
+          // preserve existing as MTT by default
+          const raw = {...s};
+          raw.format = raw.format || (raw.tags?.format) || "MTT";
+          return normalizeScenario(raw, raw.format);
+        });
+        saveJSON(LS_SCEN, converted);
+      }
+    }catch{}
+  }
+
+  function loadUI(){
+    const ui = loadJSON(LS_UI, null);
+    if(ui && typeof ui === "object"){
+      if(ui.leftWidth) document.getElementById("leftPane").style.width = ui.leftWidth + "px";
+      if(ui.format === "MTT" || ui.format === "Cash") state.format = ui.format;
+      if(ui.selectedIdsByFormat){
+        for(const fmt of ["MTT","Cash"]){
+          const arr = ui.selectedIdsByFormat[fmt];
+          if(Array.isArray(arr)) state.selectedIdsByFormat[fmt] = new Set(arr);
+        }
+      }
+      if(ui.browseScenarioIdByFormat){
+        for(const fmt of ["MTT","Cash"]){
+          const id = ui.browseScenarioIdByFormat[fmt];
+          if(typeof id === "string") state.browseScenarioIdByFormat[fmt] = id;
+        }
+      }
+    }
+  }
+  function saveUI(){
+    saveJSON(LS_UI, {
+      leftWidth: parseInt(document.getElementById("leftPane").style.width || "360", 10),
+      format: state.format,
+      selectedIdsByFormat: {
+        MTT: [...state.selectedIdsByFormat.MTT],
+        Cash: [...state.selectedIdsByFormat.Cash],
+      },
+      browseScenarioIdByFormat: state.browseScenarioIdByFormat,
+    });
   }
 
   function loadScenarios(){
     const arr = loadJSON(LS_SCEN, []);
-    state.scenarios = Array.isArray(arr) ? arr : [];
-    for(const s of state.scenarios){
+    state.scenariosAll = Array.isArray(arr) ? arr : [];
+    // Ensure format field exists
+    for(const s of state.scenariosAll){
       if(!s.id) s.id = crypto.randomUUID();
+      const fmt = s.format || s.tags?.format || "MTT";
+      s.format = (fmt === "Cash") ? "Cash" : "MTT";
+      s.tags = s.tags || {};
+      s.tags.format = s.format;
     }
-    if(state.selectedScenarioIds.size === 0){
-      state.scenarios.forEach(s => state.selectedScenarioIds.add(s.id));
+    // Default select all per format if empty
+    for(const fmt of ["MTT","Cash"]){
+      if(state.selectedIdsByFormat[fmt].size === 0){
+        state.scenariosAll.filter(s => s.format === fmt).forEach(s => state.selectedIdsByFormat[fmt].add(s.id));
+      }
+      // Default browse scenario
+      if(!state.browseScenarioIdByFormat[fmt]){
+        const first = state.scenariosAll.find(s => s.format === fmt);
+        state.browseScenarioIdByFormat[fmt] = first ? first.id : null;
+      }
     }
   }
-  function saveScenarios(){ saveJSON(LS_SCEN, state.scenarios); }
-  function getScenarioById(id){ return state.scenarios.find(s => s.id === id) || null; }
+  function saveScenarios(){ saveJSON(LS_SCEN, state.scenariosAll); saveUI(); }
+
+  function getVisibleScenarios(){
+    return state.scenariosAll.filter(s => s.format === state.format);
+  }
+  function getSelectedSet(){
+    return state.selectedIdsByFormat[state.format];
+  }
+  function setSelectedSet(newSet){
+    state.selectedIdsByFormat[state.format] = newSet;
+    saveUI();
+  }
+  function getBrowseScenarioId(){
+    return state.browseScenarioIdByFormat[state.format];
+  }
+  function setBrowseScenarioId(id){
+    state.browseScenarioIdByFormat[state.format] = id;
+    saveUI();
+  }
+  function getScenarioById(id){
+    return state.scenariosAll.find(s => s.id === id) || null;
+  }
 
   function loadReports(){
     const arr = loadJSON(LS_REP, []);
@@ -735,11 +864,41 @@
     saveJSON(LS_REP, arr.slice(0, 200));
   }
 
+  migrateV1IfNeeded();
+  loadUI();
   loadScenarios();
+
+  // URL autoplay (new-tab Play)
+  function applyAutoplayFromURL(){
+    const u = new URL(window.location.href);
+    const fmt = u.searchParams.get("format");
+    const playId = u.searchParams.get("play");
+    const mode = u.searchParams.get("mode");
+    if(fmt === "MTT" || fmt === "Cash") state.format = fmt;
+    if(mode && ["trainer","editor","library","reports"].includes(mode)) state.mode = mode;
+
+    if(playId){
+      const sc = getScenarioById(playId);
+      if(sc && sc.format === state.format){
+        setBrowseScenarioId(sc.id);
+        // select only this scenario for this format
+        setSelectedSet(new Set([sc.id]));
+        // start immediately if in trainer
+        state.mode = "trainer";
+        syncModeUI();
+        startSessionForScenarioId(sc.id);
+        // clean URL (optional)
+        u.searchParams.delete("play");
+        u.searchParams.delete("mode");
+        history.replaceState({}, "", u.toString());
+        toast("Started in new tab");
+      }
+    }
+  }
 
   // Actions / colors / gradients
   function actionColor(action){
-    const a = action.toLowerCase();
+    const a = String(action).toLowerCase();
     if(a === "fold") return getCSS("--fold");
     if(a === "call") return getCSS("--call");
     if(a === "jam" || a === "allin" || a === "all-in") return getCSS("--jam");
@@ -913,6 +1072,47 @@
     return {tier:"wrong", pts:0};
   }
 
+  // Inspector (click cell -> show %)
+  function setInspector(scenarioId, hand){
+    state.inspect = { scenarioId, hand };
+    // Re-render only the right panel; simplest is full mode render.
+    renderMain();
+  }
+  function renderInspectorHTML(){
+    const {scenarioId, hand} = state.inspect;
+    if(!scenarioId || !hand) {
+      return `
+        <div class="inspectBox">
+          <div class="inspectTitle">
+            <b>Cell inspector</b>
+            <span class="badge mono">Click a hand</span>
+          </div>
+          <div class="tiny muted" style="margin-top:6px;">Works in Trainer (when grid visible) and Library browse.</div>
+        </div>
+      `;
+    }
+    const s = getScenarioById(scenarioId);
+    if(!s) return `
+      <div class="inspectBox"><b>Cell inspector</b><div class="tiny muted">Scenario not found.</div></div>
+    `;
+    const pct = s.grid?.[hand] || {};
+    const norm = normalizePctMap(pct, s.actions);
+    return `
+      <div class="inspectBox">
+        <div class="inspectTitle">
+          <b>Cell: <span class="mono">${escapeHTML(hand)}</span></b>
+          <span class="tag"><span class="mono">${escapeHTML(s.name)}</span></span>
+        </div>
+        <div class="inspectRow">
+          ${s.actions.map(a => {
+            const v = Math.round((norm[a]||0)*10)/10;
+            return `<span class="tag"><span class="sw" style="background:${actionColor(a)}"></span>${escapeHTML(a)}: <b>${v}%</b></span>`;
+          }).join("")}
+        </div>
+      </div>
+    `;
+  }
+
   // Scenario header actions
   function renderScenarioHeaderActions(){
     scenarioHeaderActions.innerHTML = "";
@@ -932,70 +1132,125 @@
       importBtn.addEventListener("click", ()=> fileImport.click());
       scenarioHeaderActions.appendChild(importBtn);
 
-      scenarioHeaderActions.appendChild(mkBtn("New Scenario", "primary", () => createNewScenario(true)));
+      scenarioHeaderActions.appendChild(mkBtn("New", "primary", () => createNewScenario(true)));
       scenarioHeaderActions.appendChild(mkBtn("Export selected", "", exportSelectedScenarios));
       scenarioHeaderActions.appendChild(mkBtn("Delete selected", "danger", deleteSelectedScenarios));
-      scenarioPanelHint.textContent = "Library: import, create, export, delete scenarios.";
+      scenarioPanelHint.textContent = "Library: click a scenario name to browse its grid + click cells to inspect.";
 
     } else if(state.mode === "trainer"){
-      scenarioHeaderActions.appendChild(mkBtn("New Scenario", "primary", () => createNewScenario(true)));
-      scenarioPanelHint.textContent = "Trainer: select scenarios to include in sessions. Import is in Library.";
+      scenarioHeaderActions.appendChild(mkBtn("New", "primary", () => createNewScenario(true)));
+      scenarioPanelHint.textContent = "Trainer: click a scenario name to browse, or hit ▶ to train just that scenario.";
 
     } else if(state.mode === "editor"){
-      scenarioHeaderActions.appendChild(mkBtn("New Scenario", "primary", () => createNewScenario(true)));
-      scenarioPanelHint.textContent = "Editor: paint ranges. Click Save (or Ctrl/⌘+S) to keep changes.";
+      scenarioHeaderActions.appendChild(mkBtn("New", "primary", () => createNewScenario(true)));
+      scenarioPanelHint.textContent = "Editor: paint ranges. Save (Ctrl/⌘+S) to keep changes.";
 
     } else if(state.mode === "reports"){
-      scenarioPanelHint.textContent = "Reports: your sessions are stored locally in this browser.";
+      scenarioPanelHint.textContent = "Reports: sessions stored locally in this browser.";
     }
+
+    scenarioPanelTitle.textContent = `Scenarios (${state.format})`;
   }
 
   // Scenario list
   function renderScenarioList(){
     scenarioList.innerHTML = "";
-    scenarioCount.textContent = String(state.scenarios.length);
-    scenarioSelectedCount.textContent = String(state.selectedScenarioIds.size);
+    const visible = getVisibleScenarios();
+    const selectedSet = getSelectedSet();
+    scenarioCount.textContent = String(visible.length);
+    scenarioSelectedCount.textContent = String(selectedSet.size);
 
-    const sorted = [...state.scenarios].sort((a,b) => a.name.localeCompare(b.name));
+    const sorted = [...visible].sort((a,b) => (a.name||"").localeCompare(b.name||""));
+
+    const compact = (state.mode === "trainer");
+
     for(const s of sorted){
-      const meta = parseScenarioName(s.name);
-      const actions = (s.actions || []).join(", ");
-      const checked = state.selectedScenarioIds.has(s.id);
-
+      const checked = selectedSet.has(s.id);
       const el = document.createElement("div");
       el.className = "item";
-      el.innerHTML = `
-        <div class="itemTop">
-          <div style="display:flex; gap:10px; align-items:flex-start;">
-            <input type="checkbox" ${checked ? "checked":""} data-id="${s.id}" />
-            <div>
-              <div class="itemTitle">${escapeHTML(s.name)}</div>
-              <div class="itemMeta">
-                ${meta.stack ? `<span class="tag">Stack: ${escapeHTML(meta.stack)}</span>`:""}
-                ${meta.pos ? `<span class="tag">Spot: ${escapeHTML(meta.pos)}</span>`:""}
-                <span class="tag">Actions: ${escapeHTML(actions)}</span>
+
+      if(compact){
+        el.innerHTML = `
+          <div class="itemCompact">
+            <div class="itemLeft">
+              <input type="checkbox" ${checked ? "checked":""} data-id="${s.id}" />
+              <div class="itemName" title="${escapeHTML(s.name)}" data-browse="${s.id}">
+                ${escapeHTML(s.name)}
               </div>
             </div>
+            <div class="itemIcons">
+              <button class="iconBtn primary" title="Play this scenario (Ctrl/Cmd/Shift: new tab)" data-play="${s.id}">▶</button>
+              <button class="iconBtn" title="Edit" data-edit="${s.id}">✎</button>
+            </div>
           </div>
-          <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
-            <button class="btn small" data-edit="${s.id}">Edit</button>
+        `;
+      } else {
+        // Non-trainer list (more info + edit)
+        el.innerHTML = `
+          <div class="itemTop">
+            <div style="display:flex; gap:10px; align-items:flex-start;">
+              <input type="checkbox" ${checked ? "checked":""} data-id="${s.id}" />
+              <div>
+                <div class="itemTitle" data-browse="${s.id}" title="Browse grid">${escapeHTML(s.name)}</div>
+                <div class="itemMeta">
+                  <span class="tag">Actions: ${escapeHTML((s.actions||[]).join(", "))}</span>
+                  <span class="tag">Format: <b>${escapeHTML(s.format)}</b></span>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+              <button class="iconBtn" title="Edit" data-edit="${s.id}">✎</button>
+            </div>
           </div>
-        </div>
-      `;
+        `;
+      }
+
       scenarioList.appendChild(el);
     }
 
     scenarioList.querySelectorAll('input[type="checkbox"][data-id]').forEach(cb => {
       cb.addEventListener("change", (e) => {
         const id = e.target.getAttribute("data-id");
-        if(e.target.checked) state.selectedScenarioIds.add(id);
-        else state.selectedScenarioIds.delete(id);
-        scenarioSelectedCount.textContent = String(state.selectedScenarioIds.size);
+        const set = new Set([...getSelectedSet()]);
+        if(e.target.checked) set.add(id);
+        else set.delete(id);
+        setSelectedSet(set);
+        scenarioSelectedCount.textContent = String(set.size);
       });
     });
 
-    scenarioList.querySelectorAll('button[data-edit]').forEach(btn => {
+    scenarioList.querySelectorAll('[data-edit]').forEach(btn => {
       btn.addEventListener("click", () => openEditor(btn.getAttribute("data-edit")));
+    });
+
+    scenarioList.querySelectorAll('[data-browse]').forEach(btn => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-browse");
+        setBrowseScenarioId(id);
+        // reset inspector to avoid mismatch if switching scenarios
+        state.inspect = { scenarioId: id, hand: null };
+        renderMain();
+      });
+    });
+
+    scenarioList.querySelectorAll('[data-play]').forEach(btn => {
+      btn.addEventListener("click", (ev) => {
+        const id = btn.getAttribute("data-play");
+        if(ev.ctrlKey || ev.metaKey || ev.shiftKey){
+          const u = new URL(window.location.href);
+          u.searchParams.set("mode","trainer");
+          u.searchParams.set("format", state.format);
+          u.searchParams.set("play", id);
+          window.open(u.toString(), "_blank");
+          return;
+        }
+        // same tab: select only this scenario and start
+        setBrowseScenarioId(id);
+        setSelectedSet(new Set([id]));
+        state.mode = "trainer";
+        syncModeUI();
+        startSessionForScenarioId(id);
+      });
     });
   }
 
@@ -1012,7 +1267,7 @@
   }
 
   function createNewScenario(openEditorAfter=true){
-    const name = (prompt("Scenario name (example: 20bb - BTN - RFI)") || "").trim();
+    const name = (prompt(`Scenario name (will be saved under ${state.format})\nExample: 20bb - BTN - RFI`) || "").trim();
     if(!name) return;
 
     const includeCall = (prompt("Include Call/Limp action? (y/n)", "n") || "n").trim().toLowerCase().startsWith("y");
@@ -1034,14 +1289,20 @@
       id: crypto.randomUUID(),
       name,
       actions,
-      tags: {},
+      tags: { format: state.format },
+      format: state.format,
       grid: emptyGridForActions(actions),
       created: "local",
       updatedAt: nowISO(),
     };
 
-    state.scenarios.push(scen);
-    state.selectedScenarioIds.add(scen.id);
+    state.scenariosAll.push(scen);
+    // select it in its format
+    const set = new Set([...getSelectedSet()]);
+    set.add(scen.id);
+    setSelectedSet(set);
+    setBrowseScenarioId(scen.id);
+
     saveScenarios();
     renderScenarioList();
     toast("Created scenario");
@@ -1059,32 +1320,42 @@
       try{
         const text = await f.text();
         const raw = JSON.parse(text);
-        const scen = normalizeScenario(raw);
-        const idx = state.scenarios.findIndex(s => s.name === scen.name);
+        const scen = normalizeScenario(raw, state.format);
+
+        // upsert by name within same format
+        const idx = state.scenariosAll.findIndex(s => s.format === scen.format && s.name === scen.name);
         if(idx >= 0){
-          scen.id = state.scenarios[idx].id;
-          state.scenarios[idx] = scen;
+          scen.id = state.scenariosAll[idx].id;
+          state.scenariosAll[idx] = scen;
         }else{
-          state.scenarios.push(scen);
-          state.selectedScenarioIds.add(scen.id);
+          state.scenariosAll.push(scen);
         }
+
+        // select it
+        const set = new Set([...state.selectedIdsByFormat[scen.format]]);
+        set.add(scen.id);
+        state.selectedIdsByFormat[scen.format] = set;
+
+        // browse it if on this format
+        if(scen.format === state.format) setBrowseScenarioId(scen.id);
+
         added++;
       }catch(err){
         console.error(err);
         toast(`Failed: ${f.name}`);
       }
     }
+
     saveScenarios();
     renderScenarioList();
-    scenarioSelectedCount.textContent = String(state.selectedScenarioIds.size);
-    toast(`Imported ${added} scenario(s)`);
+    toast(`Imported ${added} scenario(s) to ${state.format}`);
     e.target.value = "";
   });
 
   function exportSelectedScenarios(){
-    const ids = [...state.selectedScenarioIds];
-    if(!ids.length) return toast("No scenarios selected");
-    const list = state.scenarios.filter(s => state.selectedScenarioIds.has(s.id));
+    const selectedSet = getSelectedSet();
+    const list = getVisibleScenarios().filter(s => selectedSet.has(s.id));
+    if(list.length === 0) return toast("No scenarios selected");
     if(list.length === 1){
       downloadJSON(list[0], safeName(list[0].name) + ".json");
     }else{
@@ -1096,33 +1367,44 @@
   }
 
   function deleteSelectedScenarios(){
-    const ids = [...state.selectedScenarioIds];
+    const selectedSet = getSelectedSet();
+    const ids = [...selectedSet];
     if(!ids.length) return toast("No scenarios selected");
-    if(!confirm(`Delete ${ids.length} selected scenario(s) from this browser?`)) return;
-    state.scenarios = state.scenarios.filter(s => !state.selectedScenarioIds.has(s.id));
-    state.selectedScenarioIds.clear();
-    state.scenarios.forEach(s => state.selectedScenarioIds.add(s.id));
+    if(!confirm(`Delete ${ids.length} selected scenario(s) from ${state.format} on this browser?`)) return;
+
+    state.scenariosAll = state.scenariosAll.filter(s => !(s.format === state.format && selectedSet.has(s.id)));
+
+    // reset selection to all remaining in this format
+    const remain = getVisibleScenarios();
+    setSelectedSet(new Set(remain.map(s => s.id)));
+
+    // fix browse
+    const b = getBrowseScenarioId();
+    const stillExists = b && getScenarioById(b) && getScenarioById(b).format === state.format;
+    if(!stillExists){
+      setBrowseScenarioId(remain[0]?.id || null);
+    }
+
+    // if editing deleted scenario
     if(state.editorScenarioId && !getScenarioById(state.editorScenarioId)) closeEditor();
+
     saveScenarios();
     renderScenarioList();
-    scenarioSelectedCount.textContent = String(state.selectedScenarioIds.size);
     toast("Deleted");
+    renderMain();
   }
 
-  document.getElementById("btnSelectAll").addEventListener("click", () => {
-    state.selectedScenarioIds = new Set(state.scenarios.map(s => s.id));
+  byId("btnSelectAll").addEventListener("click", () => {
+    setSelectedSet(new Set(getVisibleScenarios().map(s => s.id)));
     renderScenarioList();
-    scenarioSelectedCount.textContent = String(state.selectedScenarioIds.size);
   });
-  document.getElementById("btnSelectNone").addEventListener("click", () => {
-    state.selectedScenarioIds.clear();
+  byId("btnSelectNone").addEventListener("click", () => {
+    setSelectedSet(new Set());
     renderScenarioList();
-    scenarioSelectedCount.textContent = String(state.selectedScenarioIds.size);
   });
 
-  // Mode switching
+  // Editor save controls in top bar
   function renderTopEditorControls(){
-    // Show big obvious save controls only in editor mode
     if(state.mode !== "editor" || !state.editorDraft){
       topEditorControls.style.display = "none";
       topEditorControls.innerHTML = "";
@@ -1138,34 +1420,22 @@
     topEditorControls.querySelector("#topDiscard").addEventListener("click", discardEditorChanges);
   }
 
+  // Mode switching
   function syncModeUI(){
     modeSeg.querySelectorAll("button").forEach(b => {
       b.classList.toggle("active", b.getAttribute("data-mode") === state.mode);
     });
-    formatTag.textContent = `Mode: ${state.format}`;
-    saveJSON(LS_UI, {
-      leftWidth: parseInt(document.getElementById("leftPane").style.width || "360", 10),
-      format: state.format
+    formatSeg.querySelectorAll("button").forEach(b => {
+      b.classList.toggle("active", b.getAttribute("data-format") === state.format);
     });
 
+    formatTag.textContent = `Format: ${state.format}`;
     renderScenarioHeaderActions();
     renderScenarioList();
     renderTopEditorControls();
-
-    if(state.mode === "trainer"){
-      renderTrainerLeft();
-      renderTrainerMain();
-    }else if(state.mode === "editor"){
-      renderEditorLeft();
-      renderEditorMain();
-    }else if(state.mode === "library"){
-      renderLibraryLeft();
-      renderLibraryMain();
-    }else if(state.mode === "reports"){
-      renderReportsLeft();
-      renderReportsMain();
-    }
-
+    renderLeft();
+    renderMain();
+    saveUI();
     setTimeout(() => fitAllGrids(), 0);
   }
 
@@ -1173,13 +1443,45 @@
     const btn = e.target.closest("button[data-mode]");
     if(!btn) return;
 
-    // warn if leaving editor with unsaved changes
     if(state.mode === "editor" && state.editorDirty){
       const ok = confirm("You have unsaved changes. Leave without saving?");
       if(!ok) return;
     }
-
     state.mode = btn.getAttribute("data-mode");
+    syncModeUI();
+  });
+
+  formatSeg.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-format]");
+    if(!btn) return;
+
+    if(state.mode === "editor" && state.editorDirty){
+      const ok = confirm("You have unsaved changes. Switch format without saving?");
+      if(!ok) return;
+    }
+    const nextFmt = btn.getAttribute("data-format");
+    if(nextFmt === state.format) return;
+
+    // stop current session when switching library
+    if(state.sessionActive){
+      state.sessionActive = false;
+      state.sessionQueue = [];
+      state.currentHand = null;
+      state.reveal = false;
+      state.attempts = [];
+      sessStat.textContent = "—";
+    }
+
+    state.format = nextFmt;
+    // ensure browse is set
+    if(!getBrowseScenarioId()){
+      const first = getVisibleScenarios()[0];
+      setBrowseScenarioId(first ? first.id : null);
+    }
+    // reset inspector to current browse scenario
+    const b = getBrowseScenarioId();
+    state.inspect = { scenarioId: b, hand: null };
+    closeEditor();
     syncModeUI();
   });
 
@@ -1191,14 +1493,20 @@
     }
   });
 
-  document.getElementById("btnResetAll").addEventListener("click", () => {
-    if(!confirm("Reset all site data? This deletes imported scenarios and reports from this browser.")) return;
+  byId("btnResetAll").addEventListener("click", () => {
+    if(!confirm("Reset all site data? This deletes scenarios and reports from this browser.")) return;
     localStorage.removeItem(LS_SCEN);
     localStorage.removeItem(LS_REP);
     localStorage.removeItem(LS_UI);
+    // also remove old v1 data if present
+    localStorage.removeItem("pokerTrainerScenarios_v1");
+    localStorage.removeItem("pokerTrainerReports_v1");
+    localStorage.removeItem("pokerTrainerUI_v1");
 
-    state.scenarios = [];
-    state.selectedScenarioIds.clear();
+    state.scenariosAll = [];
+    state.selectedIdsByFormat = { MTT: new Set(), Cash: new Set() };
+    state.browseScenarioIdByFormat = { MTT: null, Cash: null };
+    state.inspect = {scenarioId:null, hand:null};
     state.sessionActive = false;
 
     saveScenarios();
@@ -1206,19 +1514,26 @@
     toast("Reset complete");
   });
 
+  // Left pane renderer
+  function renderLeft(){
+    if(state.mode === "trainer") renderTrainerLeft();
+    else if(state.mode === "editor") renderEditorLeft();
+    else if(state.mode === "library") renderLibraryLeft();
+    else if(state.mode === "reports") renderReportsLeft();
+  }
+
+  // Main pane renderer
+  function renderMain(){
+    if(state.mode === "trainer") renderTrainerMain();
+    else if(state.mode === "editor") renderEditorMain();
+    else if(state.mode === "library") renderLibraryMain();
+    else if(state.mode === "reports") renderReportsMain();
+  }
+
   // Trainer UI
   function renderTrainerLeft(){
     leftTitle.textContent = "Trainer Controls";
     leftBody.innerHTML = `
-      <div class="row" style="justify-content:space-between;">
-        <div class="pill"><span class="muted">Format</span> <b>${state.format}</b></div>
-        <div class="seg">
-          <button id="fmtMTT" class="${state.format==="MTT"?"active":""}">MTT</button>
-          <button id="fmtCash" class="${state.format==="Cash"?"active":""}">Cash</button>
-        </div>
-      </div>
-      <div class="hr"></div>
-
       <div class="row" style="justify-content:space-between;">
         <div class="pill"><span class="muted">Session length</span> <b>${state.sessionLen}</b></div>
         <input id="sessLen" type="range" min="5" max="60" step="1" value="${state.sessionLen}" />
@@ -1239,9 +1554,6 @@
       </div>
     `;
 
-    leftBody.querySelector("#fmtMTT").addEventListener("click", ()=>{state.format="MTT"; syncModeUI();});
-    leftBody.querySelector("#fmtCash").addEventListener("click", ()=>{state.format="Cash"; syncModeUI();});
-
     leftBody.querySelector("#sessLen").addEventListener("input", (e)=>{
       state.sessionLen = Number(e.target.value);
       renderTrainerLeft();
@@ -1253,26 +1565,43 @@
 
   function renderTrainerMain(){
     mainTitle.textContent = "Trainer";
+    const browseId = getBrowseScenarioId();
+    const browseScen = browseId ? getScenarioById(browseId) : null;
+    scenarioTag.textContent = browseScen ? browseScen.name : "—";
 
     if(!state.sessionActive){
-      scenarioTag.textContent = "Select scenarios (left) · Import in Library";
-      mainBody.innerHTML = `
-        <div class="panel" style="background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:14px;">
-          <h2 style="margin:0 0 8px; font-size:18px;">Ready to train</h2>
-          <div class="muted">Check scenarios on the left, then start a session.</div>
+      // Browse mode: show grid for selected scenario (outside edit mode) + inspector
+      if(!browseScen){
+        mainBody.innerHTML = `
+          ${renderInspectorHTML()}
           <div class="hr"></div>
-          <div class="legend">
-            <span><span class="sw" style="background:var(--fold)"></span>Fold</span>
-            <span><span class="sw" style="background:var(--call)"></span>Call/Limp</span>
-            <span><span class="sw" style="background:var(--raise)"></span>Raise</span>
-            <span><span class="sw" style="background:var(--jam)"></span>Jam</span>
+          <div class="muted">No scenarios in ${state.format}. Go to Library → Import JSON or create a new scenario.</div>
+        `;
+        window.onkeydown = null;
+        return;
+      }
+
+      mainBody.innerHTML = `
+        ${renderInspectorHTML()}
+        <div class="hr"></div>
+        <div class="panel" style="background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:12px; height: calc(100vh - 56px - 14px - 14px - 70px - 120px);">
+          <div class="row" style="justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-weight:900;">Browse grid (not training)</div>
+              <div class="tiny muted">Click a cell to see action % in the inspector.</div>
+            </div>
+            <div class="row">
+              <span class="tag">Actions: <b>${escapeHTML((browseScen.actions||[]).join(", "))}</b></span>
+            </div>
           </div>
           <div class="hr"></div>
-          <div class="tiny muted">To keep edits: go to <b>Editor</b> and click <b>Save</b> (Ctrl/⌘+S).</div>
+          <div style="height: calc(100% - 52px);">
+            ${renderGridHTML(browseScen, null, false, { allowClickInspect:true, scenarioId:browseScen.id })}
+          </div>
         </div>
       `;
-      sessStat.textContent = "—";
       window.onkeydown = null;
+      setTimeout(() => fitAllGrids(), 0);
       return;
     }
 
@@ -1285,7 +1614,6 @@
     const {scenario, hand, rng, solverChoice, normalized, cards} = ch;
     scenarioTag.textContent = scenario.name;
 
-    const info = parseScenarioName(scenario.name);
     const gridPanelHeight = "calc(100vh - 56px - 14px - 14px - 140px)";
 
     const hasCall = scenario.actions.some(a=>a.toLowerCase()==="call");
@@ -1299,35 +1627,23 @@
     };
 
     mainBody.innerHTML = `
+      ${renderInspectorHTML()}
+      <div class="hr"></div>
+
       <div class="row" style="justify-content:space-between; align-items:stretch; gap:14px;">
         <div class="col" style="gap:10px; flex:1; min-width:520px;">
-          <div class="row">
-            <span class="tag">Stack: ${escapeHTML(info.stack || (scenario.tags?.stack_bb ? scenario.tags.stack_bb+"bb":"—"))}</span>
-            <span class="tag">Spot: ${escapeHTML(info.pos || "—")}</span>
-            <span class="tag">Hand #${state.currentIdx+1}/${state.sessionQueue.length}</span>
-          </div>
-
           <div class="scenarioName">${escapeHTML(scenario.name)}</div>
 
           <div class="cards">
             ${renderCardHTML(cards[0])}
             ${renderCardHTML(cards[1])}
             <div class="pill"><span class="muted">Combo</span> <b class="mono">${hand}</b></div>
+            <div class="pill"><span class="muted">Hand</span> <b class="mono">#${state.currentIdx+1}/${state.sessionQueue.length}</b></div>
           </div>
 
           <div class="rngBanner">RNG: ${rng}</div>
 
           <div class="panel" style="background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:12px;">
-            <div class="row" style="justify-content:space-between; align-items:center;">
-              <div>
-                <div style="font-weight:900; font-size:15px;">Your decision</div>
-                <div class="tiny muted">Choose an action. Strategy reveals after you act.</div>
-              </div>
-              <div class="pill"><span class="muted">Selected scenarios</span> <b>${state.selectedScenarioIds.size}</b></div>
-            </div>
-
-            <div class="hr"></div>
-
             <div class="actionBar" id="actionBar">
               <button class="actBtn actFold" data-act="Fold"><span>Fold</span><span class="k">X</span></button>
               ${hasCall ? `<button class="actBtn actCall" data-act="Call"><span>Call</span><span class="k">C</span></button>` : ``}
@@ -1375,13 +1691,16 @@
           <div class="row" style="justify-content:space-between; align-items:center;">
             <div>
               <div style="font-weight:900;">Range grid</div>
-              <div class="tiny muted">${state.reveal ? "Shown after action" : "Hidden until you act"}</div>
+              <div class="tiny muted">${state.reveal ? "Click cells to inspect." : "Hidden until you act."}</div>
             </div>
-            <div class="pill"><span class="muted">Scenario</span> <b class="mono">${escapeHTML(info.stack || "")}</b></div>
+            <div class="pill"><span class="muted">Format</span> <b>${escapeHTML(state.format)}</b></div>
           </div>
           <div class="hr"></div>
           <div style="height: calc(100% - 52px);">
-            ${state.reveal ? renderGridHTML(scenario, hand, false) : `<div class="muted">Make your decision to reveal the grid.</div>`}
+            ${state.reveal
+              ? renderGridHTML(scenario, hand, false, { allowClickInspect:true, scenarioId: scenario.id })
+              : `<div class="muted">Make a decision to reveal the grid.</div>`
+            }
           </div>
         </div>
       </div>
@@ -1421,11 +1740,30 @@
   }
 
   function startSession(){
-    const pool = state.scenarios.filter(s => state.selectedScenarioIds.has(s.id));
+    const visible = getVisibleScenarios();
+    const selectedSet = getSelectedSet();
+    const pool = visible.filter(s => selectedSet.has(s.id));
     if(pool.length === 0){
       toast("Select at least one scenario");
       return;
     }
+    buildSessionFromPool(pool);
+    syncModeUI();
+    toast("Session started");
+  }
+
+  function startSessionForScenarioId(id){
+    const sc = getScenarioById(id);
+    if(!sc || sc.format !== state.format){
+      toast("Scenario not available in this format");
+      return;
+    }
+    buildSessionFromPool([sc]);
+    syncModeUI();
+    toast("Session started (single scenario)");
+  }
+
+  function buildSessionFromPool(pool){
     state.sessionQueue = [];
     for(let i=0;i<state.sessionLen;i++){
       const scen = pool[Math.floor(Math.random()*pool.length)];
@@ -1437,8 +1775,6 @@
     state.attempts = [];
     state.reveal = false;
     setCurrentHandFromQueue();
-    syncModeUI();
-    toast("Session started");
   }
 
   function stopSession(){
@@ -1470,6 +1806,9 @@
     state.reveal = false;
     state.lastTierClass = "";
     updateSessStat();
+
+    // Ensure inspector targets current scenario (hand unset until click)
+    state.inspect = { scenarioId: scenario.id, hand: null };
   }
 
   function updateSessStat(){
@@ -1503,6 +1842,7 @@
       userAction: actual,
       tier,
       pts,
+      format: state.format,
     });
 
     state.reveal = true;
@@ -1541,7 +1881,7 @@
       createdAt: nowISO(),
       format: state.format,
       sessionLen: state.sessionQueue.length,
-      selectedScenarioCount: state.selectedScenarioIds.size,
+      selectedScenarioCount: getSelectedSet().size,
       avgScore: Math.round(avg),
       breakdown: {best, correct:corr, wrong},
       attempts: attempts.slice(0, 500),
@@ -1558,8 +1898,11 @@
   }
 
   // Grid renderer
-  function renderGridHTML(scenario, highlightHand, selectable){
+  function renderGridHTML(scenario, highlightHand, selectable, opts){
     const actions = scenario.actions;
+    const allowClickInspect = !!(opts && opts.allowClickInspect);
+    const sid = opts && opts.scenarioId ? opts.scenarioId : scenario.id;
+
     const cells = [];
     for(let r=0;r<13;r++){
       for(let c=0;c<13;c++){
@@ -1571,7 +1914,7 @@
         const cls = `cell ${isSel ? "sel":""}`;
         const hint = selectable ? `<div class="hint">paint</div>` : `<div class="hint">${isHL ? "you":""}</div>`;
         cells.push(`
-          <div class="${cls}" data-hand="${hand}"
+          <div class="${cls}" data-hand="${hand}" data-sid="${sid}"
                style="background-image:${grad}; ${isHL ? "outline:2px solid rgba(255,204,102,.9); outline-offset:-2px;" : ""}">
             <div class="lbl mono">${hand}</div>
             ${hint}
@@ -1579,11 +1922,18 @@
         `);
       }
     }
+    const legend = `
+      <div class="legend">
+        ${actions.map(a => `<span><span class="sw" style="background:${actionColor(a)}"></span>${escapeHTML(a)}</span>`).join("")}
+      </div>
+    `;
+    // attach click handler after render in parent (we do it by event delegation below)
+    const clickHint = allowClickInspect ? `<div class="tiny muted">Tip: click a cell to inspect action %</div>` : ``;
+
     return `
-      <div class="gridWrap">
-        <div class="legend">
-          ${actions.map(a => `<span><span class="sw" style="background:${actionColor(a)}"></span>${escapeHTML(a)}</span>`).join("")}
-        </div>
+      <div class="gridWrap" data-gridwrap="1" data-allowinspect="${allowClickInspect ? "1":"0"}">
+        ${legend}
+        ${clickHint}
         <div class="grid" id="grid">${cells.join("")}</div>
       </div>
     `;
@@ -1604,7 +1954,7 @@
     for(const a of state.editorDraft.actions){
       state.palette[a] = (a === "Fold") ? 100 : 0;
     }
-
+    state.inspect = { scenarioId: id, hand: null };
     syncModeUI();
     toast("Editor opened (no autosave)");
   }
@@ -1616,13 +1966,16 @@
     state.selectedCells.clear();
   }
 
-  // NEW: Central save function used by buttons + hotkey
   function saveEditorChanges(){
     if(!state.editorDraft) return;
-    const idx = state.scenarios.findIndex(s => s.id === state.editorDraft.id);
+    const idx = state.scenariosAll.findIndex(s => s.id === state.editorDraft.id);
     if(idx >= 0){
       state.editorDraft.updatedAt = nowISO();
-      state.scenarios[idx] = state.editorDraft;
+      // keep format field
+      state.editorDraft.format = state.editorDraft.format || state.format;
+      state.editorDraft.tags = state.editorDraft.tags || {};
+      state.editorDraft.tags.format = state.editorDraft.format;
+      state.scenariosAll[idx] = state.editorDraft;
       saveScenarios();
       state.editorDirty = false;
       toast("Saved");
@@ -1659,7 +2012,7 @@
     leftBody.innerHTML = `
       <div class="row" style="justify-content:space-between;">
         <span class="badge ${state.editorDirty ? "warn":""}">${state.editorDirty ? "Unsaved changes" : "Saved"}</span>
-        <span class="tag">Actions: <b>${escapeHTML(actions.join(", "))}</b></span>
+        <span class="tag">Format: <b>${escapeHTML(scen.format || state.format)}</b></span>
       </div>
 
       <div class="hr"></div>
@@ -1699,7 +2052,7 @@
       state.editorDraft.name = nameInput.value;
       state.editorDirty = true;
       renderTopEditorControls();
-      renderEditorLeft(); // to enable Save button
+      renderEditorLeft(); // enable save
       renderScenarioList();
     });
 
@@ -1760,11 +2113,13 @@
     }
 
     mainBody.innerHTML = `
-      <div class="panel" style="background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:12px; height: calc(100vh - 56px - 14px - 14px - 70px);">
+      ${renderInspectorHTML()}
+      <div class="hr"></div>
+      <div class="panel" style="background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:12px; height: calc(100vh - 56px - 14px - 14px - 70px - 120px);">
         <div class="row" style="justify-content:space-between; align-items:center;">
           <div>
             <div style="font-weight:900;">Paint the grid</div>
-            <div class="tiny muted">No autosave. Use Save (Ctrl/⌘+S) when you’re done.</div>
+            <div class="tiny muted">No autosave. Save when you’re done.</div>
           </div>
           <div class="row">
             <span class="tag">Selected cells: <b>${state.selectedCells.size}</b></span>
@@ -1773,7 +2128,7 @@
         </div>
         <div class="hr"></div>
         <div style="height: calc(100% - 52px);">
-          ${renderGridHTML(scen, null, true)}
+          ${renderGridHTML(scen, null, true, { allowClickInspect:true, scenarioId: scen.id })}
         </div>
       </div>
     `;
@@ -1793,6 +2148,8 @@
         el.style.backgroundImage = buildGradientForCell(pct, actions);
         el.classList.add("sel");
       }
+      // also update inspector
+      setInspector(s.id, hand);
       renderTopEditorControls();
     };
 
@@ -1820,7 +2177,6 @@
     });
     window.addEventListener("mouseup", () => state.paintDown = false);
 
-    // Editor hotkeys: Esc clears selection, Ctrl/Cmd+S saves
     window.onkeydown = (ev) => {
       if(state.mode !== "editor") return;
 
@@ -1844,16 +2200,16 @@
     leftTitle.textContent = "Library";
     leftBody.innerHTML = `
       <div class="row" style="justify-content:space-between;">
-        <div class="pill"><span class="muted">Scenarios</span> <b>${state.scenarios.length}</b></div>
+        <div class="pill"><span class="muted">Scenarios</span> <b>${getVisibleScenarios().length}</b></div>
         <div class="row">
-          <button class="btn small" id="btnNewScenario">New Scenario</button>
+          <button class="btn small" id="btnNewScenario">New</button>
           <button class="btn small" id="btnExport">Export selected</button>
           <button class="btn small danger" id="btnDelete">Delete selected</button>
         </div>
       </div>
       <div class="hr"></div>
       <div class="tiny muted">
-        Import JSON via the top-left scenario panel header (Library only).
+        Import JSON is at the top of the scenario list (this tab). Imported scenarios are assigned to <b>${state.format}</b>.
       </div>
     `;
     leftBody.querySelector("#btnNewScenario").addEventListener("click", () => createNewScenario(true));
@@ -1863,31 +2219,59 @@
 
   function renderLibraryMain(){
     mainTitle.textContent = "Library";
-    scenarioTag.textContent = "Manage scenarios";
+    const browseId = getBrowseScenarioId();
+    const browseScen = browseId ? getScenarioById(browseId) : null;
+    scenarioTag.textContent = browseScen ? browseScen.name : "—";
+
+    if(!browseScen){
+      mainBody.innerHTML = `
+        ${renderInspectorHTML()}
+        <div class="hr"></div>
+        <div class="muted">No scenarios in ${state.format}. Import JSON or create a new one.</div>
+      `;
+      window.onkeydown = null;
+      return;
+    }
+
     mainBody.innerHTML = `
-      <div class="panel" style="background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:14px;">
-        <h2 style="margin:0 0 8px; font-size:18px;">Scenario management</h2>
-        <div class="muted">
-          Use <b>Import JSON</b> (Library tab) or <b>New Scenario</b>. Edit a scenario, then <b>Save</b> in Editor.
+      ${renderInspectorHTML()}
+      <div class="hr"></div>
+      <div class="panel" style="background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:12px; height: calc(100vh - 56px - 14px - 14px - 70px - 120px);">
+        <div class="row" style="justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-weight:900;">Browse solution</div>
+            <div class="tiny muted">Click a cell to see action % in the inspector.</div>
+          </div>
+          <div class="row">
+            <span class="tag">Actions: <b>${escapeHTML((browseScen.actions||[]).join(", "))}</b></span>
+            <button class="btn small" id="btnEditBrowse">Edit</button>
+          </div>
+        </div>
+        <div class="hr"></div>
+        <div style="height: calc(100% - 52px);">
+          ${renderGridHTML(browseScen, null, false, { allowClickInspect:true, scenarioId:browseScen.id })}
         </div>
       </div>
     `;
+
+    byId("btnEditBrowse").addEventListener("click", () => openEditor(browseScen.id));
     window.onkeydown = null;
+    setTimeout(() => fitAllGrids(), 0);
   }
 
   // Reports
   function renderReportsLeft(){
     leftTitle.textContent = "Reports";
-    const reps = loadReports();
+    const reps = loadReports().filter(r => (r.format || "MTT") === state.format);
     leftBody.innerHTML = `
       <div class="row" style="justify-content:space-between;">
         <div class="pill"><span class="muted">Saved sessions</span> <b>${reps.length}</b></div>
-        <button class="btn small danger" id="btnClearReports">Clear reports</button>
+        <button class="btn small danger" id="btnClearReports">Clear ${state.format}</button>
       </div>
       <div class="hr"></div>
       <div class="reportList" id="reportList"></div>
       <div class="hr"></div>
-      <div class="tiny muted">Reports stored in this browser.</div>
+      <div class="tiny muted">Reports are stored locally (filtered by format).</div>
     `;
     const list = leftBody.querySelector("#reportList");
     list.innerHTML = reps.slice(0, 30).map(r => {
@@ -1898,15 +2282,17 @@
             <b>${escapeHTML(r.status || "")}</b>
             <span class="badge ${r.avgScore >= 80 ? "good" : (r.avgScore >= 60 ? "warn" : "bad")}">${r.avgScore}%</span>
           </div>
-          <div class="tiny muted">${new Date(r.createdAt).toLocaleString()} · ${r.format} · ${r.sessionLen} hands</div>
+          <div class="tiny muted">${new Date(r.createdAt).toLocaleString()} · ${r.sessionLen} hands</div>
           <div class="tiny muted">Best ${b.best} · Correct ${b.correct} · Wrong ${b.wrong}</div>
         </div>
       `;
-    }).join("") || `<div class="muted">No reports yet.</div>`;
+    }).join("") || `<div class="muted">No reports yet for ${state.format}.</div>`;
 
     leftBody.querySelector("#btnClearReports").addEventListener("click", () => {
-      if(!confirm("Delete all reports from this browser?")) return;
-      localStorage.removeItem(LS_REP);
+      if(!confirm(`Delete all ${state.format} reports from this browser?`)) return;
+      const all = loadReports();
+      const keep = all.filter(r => (r.format || "MTT") !== state.format);
+      saveJSON(LS_REP, keep);
       toast("Reports cleared");
       syncModeUI();
     });
@@ -1914,11 +2300,11 @@
 
   function renderReportsMain(){
     mainTitle.textContent = "Reports";
-    scenarioTag.textContent = "Session history";
+    scenarioTag.textContent = `Session history (${state.format})`;
     mainBody.innerHTML = `
       <div class="panel" style="background:rgba(15,22,33,.55); border:1px solid var(--line); border-radius:14px; padding:14px;">
         <h2 style="margin:0 0 8px; font-size:18px;">Session reports</h2>
-        <div class="muted">Your sessions are stored locally in this browser.</div>
+        <div class="muted">Switch format in the top bar to see the other mode’s reports.</div>
       </div>
     `;
     window.onkeydown = null;
@@ -1935,11 +2321,11 @@
     const min = 280, max = 560;
     const w = Math.min(max, Math.max(min, x));
     document.getElementById("leftPane").style.width = w + "px";
-    saveJSON(LS_UI, {leftWidth:w, format: state.format});
+    saveUI();
     setTimeout(() => fitAllGrids(), 0);
   });
 
-  // Global hotkey for save in editor (Ctrl/Cmd+S)
+  // Global hotkeys for save in editor
   document.addEventListener("keydown", (ev) => {
     const isSave = (ev.key.toLowerCase() === "s") && (ev.ctrlKey || ev.metaKey);
     if(isSave && state.mode === "editor"){
@@ -1948,20 +2334,50 @@
     }
   });
 
-  // Initial render
-  function updateScenarioPanelTitle(){
-    scenarioPanelTitle.textContent = state.mode === "library"
-      ? "Scenarios (Import in this tab)"
-      : "Scenarios";
+  // Grid click -> inspector (works outside edit mode too)
+  document.addEventListener("click", (ev) => {
+    const cell = ev.target.closest(".cell[data-hand][data-sid]");
+    if(!cell) return;
+    const wrap = cell.closest('[data-gridwrap="1"]');
+    if(!wrap) return;
+    if(wrap.getAttribute("data-allowinspect") !== "1") return;
+
+    const hand = cell.getAttribute("data-hand");
+    const sid = cell.getAttribute("data-sid");
+    if(hand && sid){
+      setInspector(sid, hand);
+    }
+  });
+
+  // Remove old trainer text: already removed.
+
+  // Scenario header: selection actions
+  byId("btnSelectAll").addEventListener("click", ()=>{});
+  byId("btnSelectNone").addEventListener("click", ()=>{});
+
+  // Import / delete / export only as above
+
+  // Editor controls in top bar are rendered by renderTopEditorControls
+
+  // Reset selection etc already handled
+
+  // Reset/initial inspector
+  function initInspector(){
+    const b = getBrowseScenarioId();
+    state.inspect = { scenarioId: b, hand: null };
   }
 
+  // Top-level sync
   function syncAll(){
-    updateScenarioPanelTitle();
+    initInspector();
     syncModeUI();
   }
 
+  // apply autoplay from URL (play new tab)
+  applyAutoplayFromURL();
   syncAll();
   setTimeout(() => fitAllGrids(), 0);
+
 })();
 </script>
 </body>
