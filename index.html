@@ -3130,4 +3130,43 @@ leftBody.querySelector("#btnSave").addEventListener("click", saveEditorChanges);
     const fmt = u.searchParams.get("format");
     const playId = u.searchParams.get("play");
     const mode = u.searchParams.get("mode");
-    if(fmt === "MTT" || fmt === "Cash") state.format = fmt
+    if(fmt === "MTT" || fmt === "Cash") state.format = fmt;
+    if(mode && ["trainer","editor","library","reports"].includes(mode)) state.mode = mode;
+
+    if(playId){
+      const sc = getScenarioById(playId);
+      if(sc && sc.format === state.format){
+        setBrowseScenarioId(sc.id);
+        setSelectedSet(new Set([sc.id]));
+        state.mode = "trainer";
+        startSessionForScenarioId(sc.id);
+        u.searchParams.delete("play");
+        u.searchParams.delete("mode");
+        history.replaceState({}, "", u.toString());
+      }
+    }
+  }
+
+  /* =========================
+     Init
+  ========================= */
+  migrateOlderIfNeeded();
+  loadUI();
+  loadScenarios();
+  applyAutoplayFromURL();
+
+  // default selection scenario
+  const b = getBrowseScenarioId();
+  state.selection = { scenarioId: b, hand: null };
+
+  // initial report selection
+  const reps = loadReports().filter(r => (r.format || "MTT") === state.format);
+  state.reportSelectedId = reps[0]?.id || null;
+
+  syncModeUI();
+  setTimeout(() => fitAllGrids(), 0);
+
+})();
+</script>
+</body>
+</html>
