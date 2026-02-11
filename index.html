@@ -465,6 +465,25 @@
       user-select:none;
     }
     .pillX:hover{filter:brightness(1.1)}
+
+    /* Make left controls scroll when tall (editor sliders etc.) */
+#leftPane{
+  display:flex;
+  flex-direction:column;
+  height: calc(100vh - 56px); /* top bar height in your layout */
+  overflow:hidden;
+}
+#leftPane > .panel{
+  min-height:0;
+}
+#leftPane > .panel:last-child{
+  flex:1;
+  min-height:0;
+}
+.scrollY{
+  overflow:auto;
+  min-height:0;
+}
   </style>
 </head>
 <body>
@@ -3022,3 +3041,4 @@
 </script>
 </body>
 </html>
+
