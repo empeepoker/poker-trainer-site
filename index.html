@@ -464,35 +464,26 @@
       font-weight:900;
       user-select:none;
     }
-    .pillX:hover{filter:brightness(1.1)}
-  
-    /* Editor palette numeric input */
-    .pctNum{
-      width:72px;
-      border:1px solid var(--line);
-      background:rgba(10,14,20,.35);
-      color:var(--text);
-      padding:8px 10px;
-      border-radius:12px;
-      outline:none;
-      font-family:var(--mono);
-      text-align:center;
-    }
-    .pctNum:focus{
-      border-color:rgba(106,166,255,.45);
-      box-shadow: 0 0 0 4px rgba(106,166,255,.12);
-    }
-
-    /* Make range sliders feel draggable (thumb) */
-    input[type="range"]{ cursor:pointer; }
-    input[type="range"]::-webkit-slider-thumb{ cursor:grab; }
-    input[type="range"]:active::-webkit-slider-thumb{ cursor:grabbing; }
-    input[type="range"]::-moz-range-thumb{ cursor:grab; }
-    input[type="range"]:active::-moz-range-thumb{ cursor:grabbing; }
-
-    /* Ensure left pane panels/panel bodies can scroll */
-    #leftPane .panelBody{ overflow:auto; }
-
+    
+    /* Make left controls scroll when tall (editor sliders etc.) */
+#leftPane{
+  display:flex;
+  flex-direction:column;
+  height: calc(100vh - 56px); /* top bar height in your layout */
+  overflow:hidden;
+}
+#leftPane > .panel{
+  min-height:0;
+  overflow:auto;
+}
+#leftPane > .panel:last-child{
+  flex:1;
+  min-height:0;
+}
+.scrollY{
+  overflow:auto;
+  min-height:0;
+}
   </style>
 </head>
 <body>
@@ -533,7 +524,7 @@
           <div class="row" id="scenarioHeaderActions"></div>
           <input id="fileImport" type="file" accept=".json" multiple style="display:none" />
         </div>
-        <div class="panelBody scrollY">
+        <div class="panelBody">
           <div class="row" style="justify-content:space-between;">
             <div class="pill"><span class="muted">Loaded</span> <b id="scenarioCount">0</b></div>
             <div class="pill"><span class="muted">Selected</span> <b id="scenarioSelectedCount">0</b></div>
@@ -558,7 +549,7 @@
           <div class="spacer"></div>
           <span class="badge mono" id="hotkeyHint">Hotkeys: X,C,Z,1..9, Enter</span>
         </div>
-        <div class="panelBody scrollY" id="leftBody"></div>
+        <div class="panelBody" id="leftBody"></div>
       </div>
     </div>
 
@@ -1678,123 +1669,45 @@
     leftBody.querySelector("#addRaise").addEventListener("click", () => addActionToEditor("Raise"));
     leftBody.querySelector("#addJam").addEventListener("click", () => addActionToEditor("Jam"));
 
-    // palette sliders (with numeric input + quick % buttons)
+    // palette sliders
     const pal = leftBody.querySelector("#paletteArea");
     pal.innerHTML = actions.map(a => {
       const v = Math.round((state.palette[a] ?? (a==="Fold"?100:0)));
       return `
-        <div class="col" style="gap:8px; padding:10px; border:1px solid rgba(255,255,255,.06); border-radius:14px; background:rgba(0,0,0,.10);">
-          <div class="row" style="justify-content:space-between; gap:10px; flex-wrap:nowrap;">
-            <span class="tag" style="min-width:120px;"><span class="sw" style="background:${actionColor(a)}"></span>${escapeHTML(a)}</span>
-            <div class="row" style="gap:8px; align-items:center; flex:1; min-width:0; flex-wrap:nowrap;">
-              <input type="range" min="0" max="100" step="1" value="${v}" data-act="${escapeHTML(a)}" style="flex:1; min-width:120px;" />
-              <input type="number" min="0" max="100" step="1" value="${v}" data-num="${escapeHTML(a)}" class="pctNum" />
-            </div>
-          </div>
-          <div class="row" style="gap:6px; flex-wrap:wrap;">
-            <button class="btn small" data-setpct="${escapeHTML(a)}" data-pct="0">0%</button>
-            <button class="btn small" data-setpct="${escapeHTML(a)}" data-pct="20">20%</button>
-            <button class="btn small" data-setpct="${escapeHTML(a)}" data-pct="40">40%</button>
-            <button class="btn small" data-setpct="${escapeHTML(a)}" data-pct="60">60%</button>
-            <button class="btn small" data-setpct="${escapeHTML(a)}" data-pct="80">80%</button>
-            <button class="btn small" data-setpct="${escapeHTML(a)}" data-pct="100">100%</button>
-          </div>
+        <div class="row" style="justify-content:space-between; gap:10px;">
+          <span class="tag" style="min-width:120px;"><span class="sw" style="background:${actionColor(a)}"></span>${escapeHTML(a)}</span>
+          <input type="range" min="0" max="100" step="1" value="${v}" data-act="${escapeHTML(a)}" style="flex:1" />
+          <span class="pill mono" style="min-width:56px; justify-content:center;"><b>${v}%</b></span>
+          <button class="btn small" data-100="${escapeHTML(a)}">100%</button>
         </div>
       `;
     }).join("");
 
-    
-    // Palette interop: keep DOM stable so sliders can be dragged smoothly
-    function clamp01(v){
-      v = Number(v);
-      if(!Number.isFinite(v)) v = 0;
-      return Math.max(0, Math.min(100, v));
-    }
-
-    function setActionExactPct(act, target){
-      target = clamp01(target);
-
-      // Pure button
-      if(target >= 100){
-        for(const x of actions) state.palette[x] = 0;
-        state.palette[act] = 100;
-        return;
-      }
-
-      // Scale everyone else to fill remaining
-      const others = actions.filter(x => x !== act);
-      const rem = 100 - target;
-
-      // Current other totals
-      let sumOthers = 0;
-      for(const x of others){
-        sumOthers += Math.max(0, Number(state.palette[x] ?? 0));
-      }
-
-      if(sumOthers <= 0){
-        // If no other weights, give remainder to Fold if possible, else the first other
-        for(const x of others) state.palette[x] = 0;
-        const recip = (act !== "Fold" && others.includes("Fold")) ? "Fold" : (others[0] || act);
-        if(recip !== act) state.palette[recip] = rem;
-      }else{
-        const scale = rem / sumOthers;
-        for(const x of others){
-          state.palette[x] = Math.max(0, Number(state.palette[x] ?? 0)) * scale;
-        }
-      }
-
-      state.palette[act] = target;
-
-      // Final tidy normalize for rounding drift
-      state.palette = normalizePctMap(state.palette, actions);
-    }
-
-    function syncPaletteUI(){
-      pal.querySelectorAll('input[type="range"][data-act]').forEach(r => {
-        const a = r.getAttribute("data-act");
-        const v = Math.round(Number(state.palette[a] ?? 0));
-        if(String(r.value) !== String(v)) r.value = v;
-      });
-      pal.querySelectorAll('input[type="number"][data-num]').forEach(n => {
-        const a = n.getAttribute("data-num");
-        const v = Math.round(Number(state.palette[a] ?? 0));
-        if(String(n.value) !== String(v)) n.value = v;
-      });
-    }
-
-    function markDirtyAndRefresh(){
-      state.editorDirty = true;
-      renderTopEditorControls();
-      syncPaletteUI();
-      renderEditorMain();
-    }
-
     pal.querySelectorAll('input[type="range"][data-act]').forEach(r => {
       r.addEventListener("input", () => {
         const a = r.getAttribute("data-act");
-        setActionExactPct(a, r.value);
-        markDirtyAndRefresh();
+        state.palette[a] = Number(r.value);
+        state.palette = normalizePctMap(state.palette, actions);
+        state.editorDirty = true;
+        renderTopEditorControls();
+        renderEditorLeft();
+        renderEditorMain();
       });
     });
 
-    pal.querySelectorAll('input[type="number"][data-num]').forEach(n => {
-      n.addEventListener("input", () => {
-        const a = n.getAttribute("data-num");
-        setActionExactPct(a, n.value);
-        markDirtyAndRefresh();
-      });
-    });
-
-    pal.querySelectorAll('button[data-setpct]').forEach(b => {
+    pal.querySelectorAll('button[data-100]').forEach(b => {
       b.addEventListener("click", () => {
-        const a = b.getAttribute("data-setpct");
-        const pct = Number(b.getAttribute("data-pct") || "0");
-        setActionExactPct(a, pct);
-        markDirtyAndRefresh();
+        const a = b.getAttribute("data-100");
+        for(const x of actions) state.palette[x] = 0;
+        state.palette[a] = 100;
+        state.editorDirty = true;
+        renderTopEditorControls();
+        renderEditorLeft();
+        renderEditorMain();
       });
     });
 
-leftBody.querySelector("#btnSave").addEventListener("click", saveEditorChanges);
+    leftBody.querySelector("#btnSave").addEventListener("click", saveEditorChanges);
     leftBody.querySelector("#btnDiscard").addEventListener("click", discardEditorChanges);
     leftBody.querySelector("#btnExportDraft").addEventListener("click", () => {
       if(!state.editorDraft) return;
