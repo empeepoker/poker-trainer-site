@@ -2311,31 +2311,31 @@ leftBody.querySelector("#btnSave").addEventListener("click", saveEditorChanges);
     if(pct >= 100){
       return {
         note: "100%",
-        phrases: ["Perfect","Flawless victory","Jedi Master","White Magic Hero"]
+        phrases: ["Perfect","Flawless victory","Jedi Master","White Magic Hero", "I Won't Miss.", "Conglaturation !!! You have completed a great game"]
       };
     }
     if(pct >= 95){
       return {
         note: "95–99%",
-        phrases: ["Strong","Badass","Near Perfect","The Force is strong with this one."]
+        phrases: ["Strong","Badass","Near Perfect","The Force is strong with this one.", "White Magic Building"]
       };
     }
     if(pct >= 90){
-      return { note: "90–94%", phrases: ["You are doin it!"] };
+      return { note: "90–94%", phrases: ["Crush these MTT donks", "Near Strong", "You're doin it!", "A lot of guys doing it - but only one guy can be the best."] };
     }
     if(pct >= 80){
       return { note: "80–89%", phrases: ["Not bad kid"] };
     }
     if(pct >= 70){
-      return { note: "70–79%", phrases: ["OK, keep pushing though"] };
+      return { note: "70–79%", phrases: ["OK, keep pushing though", "Only those who dare to fail greatly can ever achieve greatly."] };
     }
     if(pct >= 60){
-      return { note: "60–69%", phrases: ["Could do with work on this spot"] };
+      return { note: "60–69%", phrases: ["Could do with work on this spot", "Stings like a bitch, don't it?", "THE GAME WAS RIGGED FROM THE START", "Sometimes if you lose, you win.", "Failure is simply the opportunity to begin again, only this time more wisely."] };
     }
     if(pct >= 40){
-      return { note: "40–59%", phrases: ["Do the drill more times, you'll get it"] };
+      return { note: "40–59%", phrases: ["Do the drill more times, you'll get it", "Failure is simply the opportunity to begin again, only this time more wisely."] };
     }
-    return { note: "0–39%", phrases: ["Sorry man do this drill 10 times and learn what is going wrong!"] };
+    return { note: "0–39%", phrases: ["Wasted.", "Mission Failed. We'll get 'em next time."] };
   }
   function pickRandom(arr){
     if(!arr || !arr.length) return "";
@@ -3169,3 +3169,4 @@ leftBody.querySelector("#btnSave").addEventListener("click", saveEditorChanges);
 </script>
 </body>
 </html>
+
